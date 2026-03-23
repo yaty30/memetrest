@@ -1,0 +1,24 @@
+.gallery-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd6fe transparent;
+}
+
+.gallery-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.gallery-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gallery-scroll::-webkit-scrollbar-thumb {
+  background: #ddd6fe;
+  border-radius: 3px;
+}
+
+.gallery-scroll::-webkit-scrollbar-thumb:hover {
+  background: #c4b5fd;
+}

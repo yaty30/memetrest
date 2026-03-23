@@ -1,0 +1,15 @@
+.image-viewer-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f3eff4;
+}
+
+@media (max-width: 480px) {
+  .image-viewer-page {
+    padding: 16px;
+  }
+}
