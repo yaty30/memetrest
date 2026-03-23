@@ -6,7 +6,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
+import {
+  ThemeProvider as MuiThemeProvider,
+  CssBaseline,
+  GlobalStyles,
+} from "@mui/material";
 import { createAppTheme } from "../theme";
 
 type ColorMode = "light" | "dark";
@@ -22,23 +26,7 @@ const ColorModeContext = createContext<ColorModeContextValue | null>(null);
 const STORAGE_KEY = "memetrest-color-mode";
 
 function getInitialMode(): ColorMode {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark") {
-      return stored;
-    }
-  } catch {
-    // localStorage unavailable
-  }
-
-  if (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    return "dark";
-  }
-
-  return "light";
+  return "dark";
 }
 
 export function useColorMode(): ColorModeContextValue {
@@ -79,6 +67,28 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     <ColorModeContext.Provider value={contextValue}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
+        <GlobalStyles
+          styles={(t) => ({
+            ":root": {
+              "--mt-gradient-body": t.palette.gradient.body,
+              "--mt-gradient-viewer": t.palette.gradient.viewer,
+              "--mt-surface-card": t.palette.surface.card,
+              "--mt-scrollbar-thumb": t.palette.scrollbar.thumb,
+              "--mt-scrollbar-thumb-hover": t.palette.scrollbar.thumbHover,
+              "--mt-overlay-text": t.palette.overlay.text,
+              "--mt-overlay-text-secondary": t.palette.overlay.textSecondary,
+              "--mt-overlay-text-shadow": t.palette.overlay.textShadow,
+              "--mt-overlay-glass-button": t.palette.overlay.glassButton,
+              "--mt-overlay-glass-button-hover":
+                t.palette.overlay.glassButtonHover,
+              "--mt-text-primary": t.palette.text.primary,
+              "--mt-text-secondary": t.palette.text.secondary,
+              "--mt-action-hover": t.palette.action.hover,
+              "--mt-action-focus": t.palette.action.focus,
+              "--mt-shadow-viewer": t.palette.customShadows.viewer,
+            },
+          })}
+        />
         {children}
       </MuiThemeProvider>
     </ColorModeContext.Provider>
