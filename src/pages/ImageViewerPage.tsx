@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase";
 import ImageViewerView from "../views/ImageViewerView";
+import { memeService } from "../services";
 import "./ImageViewerPage.css";
 
 export default function ImageViewerPage() {
@@ -17,13 +16,12 @@ export default function ImageViewerPage() {
 
   useEffect(() => {
     if (!id) return;
-    getDoc(doc(db, "memes", id)).then((snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
+    memeService.getMemeById(id).then((item) => {
+      if (item) {
         setImageData({
-          imageUrl: data.imageUrl,
-          title: data.title,
-          overlay: data.overlay,
+          imageUrl: item.image,
+          title: item.title,
+          overlay: item.overlay,
         });
       } else {
         setNotFound(true);

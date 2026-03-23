@@ -63,7 +63,7 @@ export default function SearchBar({ value = "", onChange }: SearchBarProps) {
         />
       </Box>
 
-      <SettingsButton />
+      {/* <SettingsButton /> */}
     </Box>
   );
 }

@@ -2,8 +2,13 @@ import { Box } from "@mui/material";
 import AppNavbar from "../components/navigation/AppNavbar";
 import HomeGalleryView from "../views/HomeGalleryView";
 
-const MAX_WIDTH = 1100;
-
+const MAX_WIDTHS = {
+  xs: "100%",
+  sm: 900,
+  md: 1100,
+  lg: 1300,
+  xl: 1450,
+};
 export default function HomePage() {
   return (
     <Box
@@ -19,7 +24,7 @@ export default function HomePage() {
       <Box
         sx={{
           width: "100%",
-          maxWidth: MAX_WIDTH,
+          maxWidth: MAX_WIDTHS,
           mx: "auto",
           px: { xs: 1.5, sm: 3 },
           pt: { xs: 1.5, sm: 2 },
@@ -37,7 +42,7 @@ export default function HomePage() {
           flex: 1,
           minHeight: 0,
           width: "100%",
-          maxWidth: MAX_WIDTH,
+          maxWidth: MAX_WIDTHS,
           mx: "auto",
           px: { xs: 1.5, sm: 3 },
           pt: { xs: 1.5, sm: 2 },
