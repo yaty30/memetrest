@@ -1,0 +1,6 @@
+.image-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 12px 8px 16px;
+}
