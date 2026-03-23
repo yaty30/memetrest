@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Dialog, Skeleton, Box } from "@mui/material";
+import { Skeleton, Box } from "@mui/material";
 import SearchBar from "../components/SearchBar";
 import GalleryGrid from "../components/GalleryGrid";
 import FloatingActionButton from "../components/FloatingActionButton";
-import ImageViewerView from "./ImageViewerView";
+import { Lightbox } from "../components/lightbox";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import type { GalleryItem } from "../data/galleryItems";
 
@@ -67,38 +67,11 @@ export default function HomeGalleryView() {
       </div>
       <FloatingActionButton />
 
-      <Dialog
+      <Lightbox
+        item={selectedItem}
         open={selectedItem !== null}
         onClose={() => setSelectedItem(null)}
-        maxWidth={false}
-        transitionDuration={100}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backgroundColor: "overlay.backdrop",
-              backdropFilter: "blur(12px)",
-            },
-          },
-          paper: {
-            sx: {
-              borderRadius: "24px",
-              overflow: "hidden",
-              background: "transparent",
-              boxShadow: "none",
-              m: { xs: 2, sm: 3 },
-            },
-          },
-        }}
-      >
-        {selectedItem && (
-          <ImageViewerView
-            imageSrc={selectedItem.image}
-            title={selectedItem.title}
-            subtitle={selectedItem.overlay?.name ?? ""}
-            onBack={() => setSelectedItem(null)}
-          />
-        )}
-      </Dialog>
+      />
     </>
   );
 }
