@@ -146,7 +146,7 @@ export const darkPalette: PaletteOptions = {
   },
 
   gradient: {
-    body: "linear-gradient(324deg, #131313, #031503, #0d0d0d)",
+    body: "linear-gradient(324deg, #131313, #040504, #060e0a)",
     viewer: "linear-gradient(324deg, #0a0a0a, #1a1a1a, #191919)",
     cardOverlay:
       "linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)",
