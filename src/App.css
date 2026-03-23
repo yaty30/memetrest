@@ -3,7 +3,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: #ddd6fe transparent;
+  scrollbar-color: var(--mt-scrollbar-thumb) transparent;
 }
 
 .gallery-scroll::-webkit-scrollbar {
@@ -15,10 +15,10 @@
 }
 
 .gallery-scroll::-webkit-scrollbar-thumb {
-  background: #ddd6fe;
+  background: var(--mt-scrollbar-thumb);
   border-radius: 3px;
 }
 
 .gallery-scroll::-webkit-scrollbar-thumb:hover {
-  background: #c4b5fd;
+  background: var(--mt-scrollbar-thumb-hover);
 }

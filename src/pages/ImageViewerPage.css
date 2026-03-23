@@ -5,7 +5,9 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #f3eff4;
+  background: var(--mt-gradient-viewer);
+  background-size: 600% 600%;
+  animation: bg 10s ease infinite;
 }
 
 @media (max-width: 480px) {

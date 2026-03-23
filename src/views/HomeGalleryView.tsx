@@ -55,7 +55,7 @@ export default function HomeGalleryView() {
             sx={{
               textAlign: "center",
               py: 8,
-              color: "#A89BB8",
+              color: "secondary.main",
               fontSize: "0.8125rem",
             }}
           >
@@ -75,7 +75,7 @@ export default function HomeGalleryView() {
         slotProps={{
           backdrop: {
             sx: {
-              backgroundColor: "rgba(26, 22, 37, 0.5)",
+              backgroundColor: "overlay.backdrop",
               backdropFilter: "blur(12px)",
             },
           },

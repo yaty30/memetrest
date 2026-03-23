@@ -6,15 +6,15 @@ export default function SettingsButton() {
     <IconButton
       aria-label="Settings"
       sx={{
-        color: "#8B7FA0",
+        color: "secondary.main",
         gap: 0.5,
         borderRadius: "12px",
         px: 1.5,
         py: 1,
         transition: "all 0.2s ease",
         "&:hover": {
-          backgroundColor: "rgba(124,58,237,0.05)",
-          color: "#7C3AED",
+          backgroundColor: "surface.input",
+          color: "text.primary",
         },
       }}
     >

@@ -13,7 +13,9 @@ body,
 }
 
 body {
-  background: #f3eff4;
+  background: var(--mt-gradient-body);
+  background-size: 600% 600%;
+  animation: bg 30s ease infinite;
   font-family:
     "Google Sans",
     "Inter",
@@ -22,4 +24,16 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes bg {
+  0% {
+    background-position: 19% 0%;
+  }
+  50% {
+    background-position: 82% 100%;
+  }
+  100% {
+    background-position: 19% 0%;
+  }
 }

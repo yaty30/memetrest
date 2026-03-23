@@ -8,7 +8,7 @@
   cursor: pointer;
   padding: 10px 14px;
   border-radius: 12px;
-  color: #4b4459;
+  color: var(--mt-text-secondary);
   transition:
     background 0.25s ease,
     color 0.25s ease,
@@ -16,13 +16,13 @@
 }
 
 .action-item:hover {
-  background: rgba(124, 58, 237, 0.06);
-  color: #7c3aed;
+  background: var(--mt-action-hover);
+  color: var(--mt-text-primary);
 }
 
 .action-item:active {
   transform: scale(0.93);
-  background: rgba(124, 58, 237, 0.1);
+  background: var(--mt-action-focus);
 }
 
 .action-item-label {

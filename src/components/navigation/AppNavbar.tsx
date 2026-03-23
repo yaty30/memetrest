@@ -28,14 +28,14 @@ export default function AppNavbar() {
       }}
     >
       <Box
-        sx={{
+        sx={(theme) => ({
           width: "100%",
-          backgroundColor: "rgba(255,255,255,0.82)",
+          backgroundColor: "surface.glass",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
           borderRadius: "18px",
-          border: "1px solid rgba(124,58,237,0.06)",
-          boxShadow: "0 1px 8px rgba(0,0,0,0.03), 0 0 0 1px rgba(0,0,0,0.02)",
+          border: `1px solid ${theme.palette.surface.glassBorder}`,
+          boxShadow: theme.palette.customShadows.elevated,
           px: { xs: 2, sm: 3 },
           py: { xs: 1, sm: 1.25 },
           display: "flex",
@@ -43,7 +43,7 @@ export default function AppNavbar() {
           justifyContent: "space-between",
           position: "relative",
           transition: "box-shadow 0.3s ease",
-        }}
+        })}
       >
         {/* Left: Brand */}
         <NavBrand />
@@ -68,7 +68,7 @@ export default function AppNavbar() {
             <IconButton
               onClick={() => setDrawerOpen(true)}
               size="small"
-              sx={{ ml: 0.5, color: "#4B4459" }}
+              sx={{ ml: 0.5, color: "text.secondary" }}
             >
               <MenuIcon />
             </IconButton>
@@ -87,7 +87,7 @@ export default function AppNavbar() {
             borderRadius: "18px 0 0 18px",
             p: 2,
             pt: 3,
-            backgroundColor: "rgba(255,255,255,0.95)",
+            backgroundColor: "surface.drawer",
             backdropFilter: "blur(16px)",
           },
         }}

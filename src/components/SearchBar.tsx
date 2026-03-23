@@ -1,6 +1,7 @@
 import { InputBase } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { Box } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import SettingsButton from "./SettingsButton";
 
 interface SearchBarProps {
@@ -20,29 +21,30 @@ export default function SearchBar({ value = "", onChange }: SearchBarProps) {
       }}
     >
       <Box
-        sx={{
+        sx={(theme) => ({
           flex: 1,
           display: "flex",
           alignItems: "center",
-          backgroundColor: "#F8F6FA",
+          backgroundColor: "surface.input",
           borderRadius: "14px",
           px: 2.5,
           py: 1.2,
-          border: "1px solid #EDE9F4",
+          border: "1px solid",
+          borderColor: "divider",
           transition:
             "border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease",
           "&:hover": {
-            borderColor: "#D8D0E8",
-            backgroundColor: "#F5F2F8",
+            borderColor: alpha(theme.palette.common.white, 0.15),
+            backgroundColor: "surface.inputHover",
           },
           "&:focus-within": {
-            borderColor: "rgba(124,58,237,0.35)",
-            boxShadow: "0 0 0 3px rgba(124,58,237,0.06)",
-            backgroundColor: "#FDFCFE",
+            borderColor: alpha(theme.palette.primary.main, 0.4),
+            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.08)}`,
+            backgroundColor: "surface.inputFocus",
           },
-        }}
+        })}
       >
-        <SearchIcon sx={{ color: "#A89BB8", mr: 1.5, fontSize: 20 }} />
+        <SearchIcon sx={{ color: "secondary.main", mr: 1.5, fontSize: 20 }} />
         <InputBase
           placeholder="Search by title, tags, category..."
           fullWidth
@@ -52,9 +54,9 @@ export default function SearchBar({ value = "", onChange }: SearchBarProps) {
           sx={{
             fontSize: "0.8125rem",
             fontWeight: 450,
-            color: "#1A1625",
+            color: "text.primary",
             "& ::placeholder": {
-              color: "#A89BB8",
+              color: "secondary.main",
               opacity: 1,
             },
           }}

@@ -3,10 +3,10 @@
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--mt-overlay-glass-button);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #fff;
+  color: var(--mt-overlay-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,7 +18,7 @@
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--mt-overlay-glass-button-hover);
 }
 
 .back-button:active {

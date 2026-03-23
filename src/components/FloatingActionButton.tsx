@@ -5,24 +5,24 @@ export default function FloatingActionButton() {
   return (
     <Fab
       aria-label="Scroll down"
-      sx={{
+      sx={(theme) => ({
         position: "absolute",
         bottom: 28,
         left: "50%",
         transform: "translateX(-50%)",
-        backgroundColor: "#7C3AED",
-        color: "#fff",
+        backgroundColor: "primary.main",
+        color: "primary.contrastText",
         width: 44,
         height: 44,
-        boxShadow: "0 4px 20px rgba(124, 58, 237, 0.3)",
+        boxShadow: theme.palette.customShadows.fab,
         zIndex: 10,
         transition: "all 0.25s ease",
         "&:hover": {
-          backgroundColor: "#6D28D9",
-          boxShadow: "0 6px 24px rgba(124, 58, 237, 0.4)",
+          backgroundColor: "primary.dark",
+          boxShadow: theme.palette.customShadows.fabHover,
           transform: "translateX(-50%) translateY(-2px)",
         },
-      }}
+      })}
     >
       <KeyboardArrowDownIcon sx={{ fontSize: 26 }} />
     </Fab>

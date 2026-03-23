@@ -10,6 +10,7 @@ import {
   ButtonBase,
   Box,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -36,35 +37,35 @@ export default function UserMenu() {
           borderRadius: "999px",
           px: 1.2,
           py: 0.5,
-          "&:hover": { backgroundColor: "rgba(124,58,237,0.04)" },
+          "&:hover": { backgroundColor: "surface.input" },
           transition: "all 0.2s ease",
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1.2}>
           <Box sx={{ position: "relative" }}>
             <Avatar
-              sx={{
+              sx={(theme) => ({
                 width: 34,
                 height: 34,
                 fontSize: "0.8rem",
                 fontWeight: 700,
-                bgcolor: "#EDE9FE",
-                color: "#7C3AED",
-              }}
+                bgcolor: alpha(theme.palette.primary.main, 0.15),
+                color: "primary.main",
+              })}
             >
               TG
             </Avatar>
             <Box
-              sx={{
+              sx={(theme) => ({
                 position: "absolute",
                 bottom: 0,
                 right: 0,
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                backgroundColor: "#22C55E",
-                border: "2px solid #fff",
-              }}
+                backgroundColor: "status.online",
+                border: `2px solid ${theme.palette.surface.card}`,
+              })}
             />
           </Box>
 
@@ -72,7 +73,7 @@ export default function UserMenu() {
             sx={{
               fontWeight: 600,
               fontSize: "0.8125rem",
-              color: "#1A1625",
+              color: "text.primary",
               display: { xs: "none", sm: "block" },
             }}
           >
@@ -82,7 +83,7 @@ export default function UserMenu() {
           <KeyboardArrowDownIcon
             sx={{
               fontSize: 16,
-              color: "#9CA3AF",
+              color: "text.secondary",
               transition: "transform 0.2s ease",
               transform: open ? "rotate(180deg)" : "none",
             }}
@@ -98,13 +99,13 @@ export default function UserMenu() {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{
           paper: {
-            sx: {
+            sx: (theme) => ({
               mt: 1.5,
               borderRadius: "12px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+              boxShadow: theme.palette.customShadows.dropdown,
               minWidth: 180,
               py: 0.5,
-            },
+            }),
           },
         }}
       >

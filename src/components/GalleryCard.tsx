@@ -11,18 +11,17 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
   return (
     <Box
       onClick={() => onSelect?.(item)}
-      sx={{
+      sx={(theme) => ({
         borderRadius: "16px",
         cursor: "pointer",
         breakInside: "avoid",
         mb: "14px",
         transition:
           "transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+        boxShadow: theme.palette.customShadows.card,
         "&:hover": {
           transform: "translateY(-3px) scale(1.008)",
-          boxShadow:
-            "0 12px 32px rgba(124,58,237,0.1), 0 4px 12px rgba(0,0,0,0.06)",
+          boxShadow: theme.palette.customShadows.cardHover,
         },
         "&:hover .card-overlay": {
           opacity: 1,
@@ -30,7 +29,7 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
         "&:hover .card-media-wrapper img": {
           transform: "scale(1.02)",
         },
-      }}
+      })}
     >
       {/* Inner wrapper with overflow:hidden + borderRadius to cleanly clip the scaled image */}
       <Box
@@ -59,20 +58,19 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
         {item.overlay && (
           <Box
             className="card-overlay"
-            sx={{
+            sx={(theme) => ({
               position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              background:
-                "linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)",
+              background: theme.palette.gradient.cardOverlay,
               p: 1.5,
               display: "flex",
               alignItems: "center",
               gap: 1,
               opacity: 0,
               transition: "opacity 0.3s ease",
-            }}
+            })}
           >
             <Avatar
               src={item.overlay.avatar}
@@ -82,7 +80,7 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
             <Typography
               variant="body2"
               sx={{
-                color: "#fff",
+                color: "overlay.text",
                 fontSize: "0.75rem",
                 fontWeight: 500,
                 flex: 1,
@@ -95,7 +93,7 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
             <IconButton
               size="small"
               aria-label="More options"
-              sx={{ color: "#fff", p: 0.3 }}
+              sx={{ color: "overlay.text", p: 0.3 }}
             >
               <MoreVertIcon sx={{ fontSize: 18 }} />
             </IconButton>

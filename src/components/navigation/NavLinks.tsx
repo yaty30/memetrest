@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Stack, Button, Menu, MenuItem, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 interface NavItem {
@@ -15,11 +16,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Pricing" },
   { label: "Contacts" },
 ];
-
-const INACTIVE_COLOR = "#4B4459";
-const ACTIVE_BG = "rgba(124, 58, 237, 0.08)";
-const ACTIVE_COLOR = "#7C3AED";
-const HOVER_BG = "rgba(124, 58, 237, 0.04)";
 
 interface NavLinksProps {
   direction?: "row" | "column";
@@ -70,7 +66,7 @@ export default function NavLinks({
                 />
               ) : undefined
             }
-            sx={{
+            sx={(theme) => ({
               px: 2,
               py: 0.7,
               borderRadius: "999px",
@@ -78,15 +74,19 @@ export default function NavLinks({
               fontSize: "0.8125rem",
               textTransform: "none",
               whiteSpace: "nowrap",
-              color: item.active ? ACTIVE_COLOR : INACTIVE_COLOR,
-              backgroundColor: item.active ? ACTIVE_BG : "transparent",
+              color: item.active ? "primary.main" : "text.secondary",
+              backgroundColor: item.active
+                ? alpha(theme.palette.primary.main, 0.12)
+                : "transparent",
               transition: "all 0.2s ease",
               "&:hover": {
-                backgroundColor: item.active ? ACTIVE_BG : HOVER_BG,
-                color: item.active ? ACTIVE_COLOR : "#1A1625",
+                backgroundColor: item.active
+                  ? alpha(theme.palette.primary.main, 0.12)
+                  : "surface.input",
+                color: item.active ? "primary.main" : "text.primary",
               },
               minWidth: "auto",
-            }}
+            })}
           >
             {item.label}
           </Button>
@@ -100,12 +100,12 @@ export default function NavLinks({
               transformOrigin={{ vertical: "top", horizontal: "center" }}
               slotProps={{
                 paper: {
-                  sx: {
+                  sx: (theme) => ({
                     mt: 1,
                     borderRadius: "12px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                    boxShadow: theme.palette.customShadows.dropdown,
                     minWidth: 160,
-                  },
+                  }),
                 },
               }}
             >

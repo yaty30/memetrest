@@ -9,7 +9,7 @@ export default function HomePage() {
     <Box
       sx={{
         height: "100vh",
-        backgroundColor: "#F3EFF4",
+        background: "transparent",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -49,19 +49,18 @@ export default function HomePage() {
       >
         <Box
           component="main"
-          sx={{
+          sx={(theme) => ({
             flex: 1,
             minHeight: 0,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "surface.container",
             borderRadius: "22px",
-            border: "1px solid rgba(124,58,237,0.04)",
-            boxShadow:
-              "0 1px 3px rgba(0,0,0,0.02), 0 8px 40px rgba(124,58,237,0.04)",
+            border: `1px solid ${theme.palette.action.hover}`,
+            boxShadow: theme.palette.customShadows.container,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
             position: "relative",
-          }}
+          })}
         >
           <HomeGalleryView />
         </Box>
