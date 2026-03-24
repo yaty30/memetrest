@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Skeleton, Box } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Skeleton, Box, Fade, Stack } from "@mui/material";
 import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
 import GalleryGrid from "../components/GalleryGrid";
@@ -8,11 +8,13 @@ import { Lightbox } from "../components/lightbox";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
 import type { Meme } from "../types/meme";
-import EmptyIcon from "../components/EmptyIcon";
+import emptyImg from "../assets/empty.png";
 
 const SKELETON_HEIGHTS = [
   220, 300, 260, 420, 400, 240, 380, 300, 360, 300, 380, 280,
 ];
+
+const LABEL = "NOTHING_TO_SEE_HERE".split("");
 
 function GallerySkeleton() {
   return (
@@ -99,10 +101,35 @@ export default function HomeGalleryView() {
               color: "secondary.main",
             }}
           >
-            <EmptyIcon />
-            <Box sx={{ mt: 2, fontSize: "0.8125rem" }}>
-              Nothing to see here.
-            </Box>
+            <Fade in={true} timeout={4000}>
+              <img
+                src={emptyImg}
+                alt="Nothing found"
+                draggable={false}
+                style={{
+                  maxWidth: 200,
+                  filter: "grayscale(100%) opacity(0.3)",
+                  animation: "slowZoomIn 6s ease-out forwards",
+                }}
+              />
+            </Fade>
+            <Stack direction="row" sx={{ mt: 2, userSelect: "none" }}>
+              {LABEL.map((letter, index) => (
+                <Fade in={true} timeout={5000 + index * 150} key={index}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      fontSize: "1.2125rem",
+                      fontWeight: 600,
+                      opacity: 0.3,
+                      color: "#333",
+                    }}
+                  >
+                    {letter === "_" ? "\u00A0" : letter}
+                  </Box>
+                </Fade>
+              ))}
+            </Stack>
           </Box>
         ) : (
           <GalleryGrid

@@ -22,3 +22,12 @@
 .gallery-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--mt-scrollbar-thumb-hover);
 }
+
+@keyframes slowZoomIn {
+  from {
+    transform: scale(0.7);
+  }
+  to {
+    transform: scale(1);
+  }
+}

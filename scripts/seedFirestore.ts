@@ -125,6 +125,15 @@ async function seedFirestore() {
       imageUrl,
       storagePath: `memes/${itemRef.name}`,
       uploadedAt: Timestamp.now(),
+      createdAt: Timestamp.now(),
+      nsfw: false,
+      sensitive: false,
+      likeCount: 0,
+      shareCount: 0,
+      downloadCount: 0,
+      popularityScore: 0,
+      language: "en",
+      templateName: "",
       overlay:
         i === 0
           ? {
