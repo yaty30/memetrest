@@ -1,5 +1,5 @@
 import { Stack, Typography } from "@mui/material";
-import iconSrc from "../../assets/icon.png";
+// import iconSrc from "../../assets/icon.png";
 import Logo from "../Logo";
 
 export default function NavBrand() {

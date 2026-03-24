@@ -29,6 +29,7 @@ function getInitialMode(): ColorMode {
   return "dark";
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useColorMode(): ColorModeContextValue {
   const context = useContext(ColorModeContext);
   if (!context) {

@@ -49,7 +49,7 @@ export default function AppNavbar() {
         <NavBrand />
 
         {/* Center: Nav links — desktop only */}
-        {!isMobile && (
+        {/* {!isMobile && (
           <Box
             sx={{
               position: "absolute",
@@ -59,7 +59,7 @@ export default function AppNavbar() {
           >
             <NavLinks />
           </Box>
-        )}
+        )} */}
 
         {/* Right: User menu + hamburger */}
         <Stack direction="row" alignItems="center" spacing={1}>
