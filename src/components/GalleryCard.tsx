@@ -1,13 +1,25 @@
-import { Box, Avatar, Typography, IconButton } from "@mui/material";
+import {
+  Box,
+  Avatar,
+  Chip,
+  Stack,
+  Typography,
+  IconButton,
+} from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import type { GalleryItem } from "../data/galleryItems";
+import type { Meme } from "../types/meme";
 
 interface GalleryCardProps {
-  item: GalleryItem;
-  onSelect?: (item: GalleryItem) => void;
+  item: Meme;
+  onSelect?: (item: Meme) => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
+export default function GalleryCard({
+  item,
+  onSelect,
+  onTagClick,
+}: GalleryCardProps) {
   return (
     <Box
       onClick={() => onSelect?.(item)}
@@ -24,6 +36,9 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
           boxShadow: theme.palette.customShadows.cardHover,
         },
         "&:hover .card-overlay": {
+          opacity: 1,
+        },
+        "&:hover .card-tags": {
           opacity: 1,
         },
         "&:hover .card-media-wrapper img": {
@@ -98,6 +113,52 @@ export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
               <MoreVertIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Box>
+        )}
+
+        {/* Tag chips — visible on hover */}
+        {item.tags.length > 0 && (
+          <Stack
+            className="card-tags"
+            direction="row"
+            sx={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              right: 8,
+              flexWrap: "wrap",
+              gap: "4px",
+              opacity: 0,
+              transition: "opacity 0.3s ease",
+              pointerEvents: "auto",
+            }}
+          >
+            {item.tags.slice(0, 3).map((tag) => (
+              <Chip
+                key={tag}
+                label={`#${tag}`}
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tag);
+                }}
+                sx={{
+                  height: 22,
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  color: "#fff",
+                  bgcolor: "rgba(0,0,0,0.5)",
+                  backdropFilter: "blur(8px)",
+                  borderRadius: "20px",
+                  cursor: "pointer",
+                  "& .MuiChip-label": { px: 0.75 },
+                  "&:hover": {
+                    bgcolor: "rgba(94,234,212,0.25)",
+                    color: "primary.main",
+                  },
+                }}
+              />
+            ))}
+          </Stack>
         )}
       </Box>
     </Box>

@@ -7,10 +7,11 @@ import {
   useTheme,
 } from "@mui/material";
 import { Download, Share2, Heart, MessageCircle, X } from "lucide-react";
-import type { LightboxProps, Comment } from "./types";
+import type { LightboxProps, Comment, Meme } from "./types";
 import LightboxImagePane from "./LightboxImagePane";
 import LightboxSidebar from "./LightboxSidebar";
 import ActionItem from "../ActionItem";
+import { memeService } from "../../services";
 
 /** Seed comments so the UI isn't empty on first open. */
 function makeSeedComments(): Comment[] {
@@ -36,9 +37,17 @@ function makeSeedComments(): Comment[] {
   ];
 }
 
-export default function Lightbox({ item, open, onClose }: LightboxProps) {
+export default function Lightbox({
+  item,
+  open,
+  onClose,
+  onTagClick,
+}: LightboxProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const [currentItem, setCurrentItem] = useState<Meme | null>(null);
+  const displayItem = currentItem ?? item;
 
   const [comments, setComments] = useState<Comment[]>(makeSeedComments);
   const [liked, setLiked] = useState(false);
@@ -57,32 +66,48 @@ export default function Lightbox({ item, open, onClose }: LightboxProps) {
   }, []);
 
   const handleDownload = useCallback(() => {
-    if (!item) return;
+    if (!displayItem) return;
     const link = document.createElement("a");
-    link.href = item.image;
-    link.download = `${item.title.replace(/\s+/g, "-").toLowerCase()}.jpg`;
+    link.href = displayItem.image;
+    link.download = `${displayItem.title.replace(/\s+/g, "-").toLowerCase()}.jpg`;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [item]);
+    memeService
+      .incrementCounter(displayItem.id, "downloadCount")
+      .catch(() => {});
+  }, [displayItem]);
 
   const handleShare = useCallback(async () => {
-    if (!item) return;
-    const shareData = { title: item.title, url: item.image };
+    if (!displayItem) return;
+    const shareData = { title: displayItem.title, url: displayItem.image };
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        await navigator.clipboard.writeText(item.image);
+        await navigator.clipboard.writeText(displayItem.image);
       }
+      memeService
+        .incrementCounter(displayItem.id, "shareCount")
+        .catch(() => {});
     } catch {
       // User cancelled share or clipboard failed — no-op
     }
-  }, [item]);
+  }, [displayItem]);
 
-  const handleLike = useCallback(() => setLiked((v) => !v), []);
+  const handleLike = useCallback(() => {
+    setLiked((v) => !v);
+    if (!liked && displayItem) {
+      memeService.incrementCounter(displayItem.id, "likeCount").catch(() => {});
+    }
+  }, [liked, displayItem]);
+
+  const handleRelatedSelect = useCallback((meme: Meme) => {
+    setCurrentItem(meme);
+    setLiked(false);
+  }, []);
 
   const actionBar = useMemo(
     () => (
@@ -100,12 +125,15 @@ export default function Lightbox({ item, open, onClose }: LightboxProps) {
     [handleDownload, handleShare, handleLike, liked],
   );
 
-  if (!item) return null;
+  if (!displayItem) return null;
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        setCurrentItem(null);
+        onClose();
+      }}
       maxWidth={false}
       fullScreen={isMobile}
       transitionDuration={150}
@@ -130,7 +158,7 @@ export default function Lightbox({ item, open, onClose }: LightboxProps) {
           },
         },
       }}
-      aria-label={`Viewing ${item.title}`}
+      aria-label={`Viewing ${displayItem.title}`}
     >
       <Box
         sx={{
@@ -144,7 +172,10 @@ export default function Lightbox({ item, open, onClose }: LightboxProps) {
         }}
       >
         <IconButton
-          onClick={onClose}
+          onClick={() => {
+            setCurrentItem(null);
+            onClose();
+          }}
           aria-label="Close lightbox"
           sx={{
             position: "absolute",
@@ -167,15 +198,21 @@ export default function Lightbox({ item, open, onClose }: LightboxProps) {
         </IconButton>
 
         <LightboxImagePane
-          imageSrc={item.image}
-          title={item.title}
+          imageSrc={displayItem.image}
+          title={displayItem.title}
           actions={isMobile ? undefined : actionBar}
         />
         <LightboxSidebar
-          item={item}
+          item={displayItem}
           comments={comments}
           onAddComment={handleAddComment}
           actionsSlot={isMobile ? actionBar : undefined}
+          onTagClick={(tag) => {
+            setCurrentItem(null);
+            onClose();
+            onTagClick?.(tag);
+          }}
+          onRelatedSelect={handleRelatedSelect}
         />
       </Box>
     </Dialog>

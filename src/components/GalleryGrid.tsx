@@ -1,13 +1,18 @@
 import { Box } from "@mui/material";
 import GalleryCard from "./GalleryCard";
-import type { GalleryItem } from "../data/galleryItems";
+import type { Meme } from "../types/meme";
 
 interface GalleryGridProps {
-  items: GalleryItem[];
-  onSelect?: (item: GalleryItem) => void;
+  items: Meme[];
+  onSelect?: (item: Meme) => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export default function GalleryGrid({ items, onSelect }: GalleryGridProps) {
+export default function GalleryGrid({
+  items,
+  onSelect,
+  onTagClick,
+}: GalleryGridProps) {
   return (
     <Box
       sx={{
@@ -19,7 +24,12 @@ export default function GalleryGrid({ items, onSelect }: GalleryGridProps) {
       }}
     >
       {items.map((item) => (
-        <GalleryCard key={item.id} item={item} onSelect={onSelect} />
+        <GalleryCard
+          key={item.id}
+          item={item}
+          onSelect={onSelect}
+          onTagClick={onTagClick}
+        />
       ))}
     </Box>
   );

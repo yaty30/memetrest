@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
 import { Avatar, Box, Chip, Divider, Stack, Typography } from "@mui/material";
-import type { Comment, GalleryItem } from "./types";
+import { Heart, ArrowDownToLine, Share2 } from "lucide-react";
+import type { Comment, Meme } from "./types";
 import CommentList from "./CommentList";
 import CommentInput from "./CommentInput";
+import RelatedMemes from "../RelatedMemes";
 
 interface LightboxSidebarProps {
-  item: GalleryItem;
+  item: Meme;
   comments: Comment[];
   onAddComment: (text: string) => void;
   actionsSlot?: ReactNode;
+  onTagClick?: (tag: string) => void;
+  onRelatedSelect?: (meme: Meme) => void;
 }
 
 function formatTimestamp(date?: Date): string {
@@ -25,6 +29,8 @@ export default function LightboxSidebar({
   comments,
   onAddComment,
   actionsSlot,
+  onTagClick,
+  onRelatedSelect,
 }: LightboxSidebarProps) {
   return (
     <Box
@@ -67,7 +73,7 @@ export default function LightboxSidebar({
               >
                 {item.overlay.name}
               </Typography>
-              {item.uploadedAt && (
+              {item.createdAt && (
                 <Typography
                   variant="caption"
                   sx={{
@@ -75,15 +81,15 @@ export default function LightboxSidebar({
                     fontSize: { xs: "0.6875rem", md: "0.75rem" },
                   }}
                 >
-                  {formatTimestamp(item.uploadedAt)}
+                  {formatTimestamp(item.createdAt)}
                 </Typography>
               )}
             </Box>
           </Stack>
         ) : (
-          item.uploadedAt && (
+          item.createdAt && (
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {formatTimestamp(item.uploadedAt)}
+              {formatTimestamp(item.createdAt)}
             </Typography>
           )
         )}
@@ -128,7 +134,7 @@ export default function LightboxSidebar({
             flexWrap="wrap"
             sx={{
               gap: { xs: "5px", md: "6px" },
-              mb: { xs: "18px", md: 0.5 },
+              mb: { xs: "10px", md: 0.5 },
             }}
           >
             {item.tags.map((tag) => (
@@ -136,6 +142,7 @@ export default function LightboxSidebar({
                 key={tag}
                 label={`#${tag}`}
                 size="small"
+                onClick={() => onTagClick?.(tag)}
                 sx={{
                   height: "auto",
                   fontSize: { xs: "0.6875rem", md: "0.75rem" },
@@ -145,14 +152,56 @@ export default function LightboxSidebar({
                   px: { xs: 0.5, md: 0.75 },
                   py: { xs: "2px", md: "3px" },
                   borderRadius: "20px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
                   "& .MuiChip-label": {
                     px: 0.5,
+                  },
+                  "&:hover": {
+                    bgcolor: "rgba(94,234,212,0.2)",
                   },
                 }}
               />
             ))}
           </Stack>
         )}
+
+        {/* Engagement stats */}
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            mb: { xs: 1, md: 1.25 },
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Heart size={13} />
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontSize: "0.6875rem" }}
+            >
+              {item.likeCount.toLocaleString()}
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Share2 size={13} />
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontSize: "0.6875rem" }}
+            >
+              {item.shareCount.toLocaleString()}
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <ArrowDownToLine size={13} />
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontSize: "0.6875rem" }}
+            >
+              {item.downloadCount.toLocaleString()}
+            </Typography>
+          </Stack>
+        </Stack>
       </Box>
 
       {/* Mobile actions slot */}
@@ -219,6 +268,14 @@ export default function LightboxSidebar({
 
       <CommentList comments={comments} />
       <CommentInput onSubmit={onAddComment} />
+
+      {/* Related memes */}
+      {onRelatedSelect && (
+        <>
+          <Divider sx={{ borderColor: "rgba(255,255,255,0.06)" }} />
+          <RelatedMemes meme={item} onSelect={onRelatedSelect} />
+        </>
+      )}
     </Box>
   );
 }

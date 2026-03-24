@@ -1,6 +1,8 @@
-import type { GalleryItem } from "../../data/galleryItems";
+import type { Meme } from "../../types/meme";
 
-export type { GalleryItem };
+export type { Meme };
+/** @deprecated Use Meme instead */
+export type GalleryItem = Meme;
 
 export interface Comment {
   id: string;
@@ -13,7 +15,8 @@ export interface Comment {
 }
 
 export interface LightboxProps {
-  item: GalleryItem | null;
+  item: Meme | null;
   open: boolean;
   onClose: () => void;
+  onTagClick?: (tag: string) => void;
 }

@@ -2,7 +2,6 @@ import { InputBase } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import SettingsButton from "./SettingsButton";
 
 interface SearchBarProps {
   value?: string;

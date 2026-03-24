@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Skeleton, Box } from "@mui/material";
 import SearchBar from "../components/SearchBar";
+import FilterBar from "../components/FilterBar";
 import GalleryGrid from "../components/GalleryGrid";
 import FloatingActionButton from "../components/FloatingActionButton";
 import { Lightbox } from "../components/lightbox";
 import { useGalleryImages } from "../hooks/useGalleryImages";
-import type { GalleryItem } from "../data/galleryItems";
+import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
+import type { Meme } from "../types/meme";
 
 const SKELETON_HEIGHTS = [
   220, 300, 260, 420, 400, 240, 380, 300, 360, 300, 380, 280,
@@ -40,13 +42,37 @@ function GallerySkeleton() {
 }
 
 export default function HomeGalleryView() {
-  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Meme | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { items, loading, error } = useGalleryImages(searchQuery);
+
+  const {
+    filters,
+    setCategory,
+    toggleTag,
+    setSortBy,
+    clearFilters,
+    hasActiveFilters,
+  } = useDiscoveryFilters();
+
+  const { items, loading, error } = useGalleryImages(searchQuery, filters);
+
+  const handleTagClick = (tag: string) => {
+    toggleTag(tag);
+  };
 
   return (
     <>
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      <FilterBar
+        activeCategory={filters.activeCategory}
+        activeTags={filters.activeTags}
+        sortBy={filters.sortBy}
+        hasActiveFilters={hasActiveFilters}
+        onCategoryChange={setCategory}
+        onTagRemove={toggleTag}
+        onSortChange={setSortBy}
+        onClearAll={clearFilters}
+      />
       <div className="gallery-scroll">
         {loading ? (
           <GallerySkeleton />
@@ -61,8 +87,23 @@ export default function HomeGalleryView() {
           >
             {error}
           </Box>
+        ) : items.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 8,
+              color: "secondary.main",
+              fontSize: "0.8125rem",
+            }}
+          >
+            No memes found — try different filters
+          </Box>
         ) : (
-          <GalleryGrid items={items} onSelect={setSelectedItem} />
+          <GalleryGrid
+            items={items}
+            onSelect={setSelectedItem}
+            onTagClick={handleTagClick}
+          />
         )}
       </div>
       <FloatingActionButton />
@@ -71,6 +112,7 @@ export default function HomeGalleryView() {
         item={selectedItem}
         open={selectedItem !== null}
         onClose={() => setSelectedItem(null)}
+        onTagClick={handleTagClick}
       />
     </>
   );
