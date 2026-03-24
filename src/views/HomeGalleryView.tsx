@@ -8,6 +8,7 @@ import { Lightbox } from "../components/lightbox";
 import { useGalleryImages } from "../hooks/useGalleryImages";
 import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
 import type { Meme } from "../types/meme";
+import EmptyIcon from "../components/EmptyIcon";
 
 const SKELETON_HEIGHTS = [
   220, 300, 260, 420, 400, 240, 380, 300, 360, 300, 380, 280,
@@ -90,13 +91,18 @@ export default function HomeGalleryView() {
         ) : items.length === 0 ? (
           <Box
             sx={{
-              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
               py: 8,
               color: "secondary.main",
-              fontSize: "0.8125rem",
             }}
           >
-            No memes found — try different filters
+            <EmptyIcon />
+            <Box sx={{ mt: 2, fontSize: "0.8125rem" }}>
+              Nothing to see here.
+            </Box>
           </Box>
         ) : (
           <GalleryGrid
