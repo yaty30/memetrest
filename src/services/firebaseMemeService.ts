@@ -15,8 +15,9 @@ import {
   type QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../../firebase";
+import { expandTagAliases } from "../utils/tagNormalization";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 20;
 
 function mapDoc(docSnap: {
   id: string;
@@ -77,6 +78,7 @@ export class FirebaseMemeService implements MemeService {
   async queryMemes(q: MemeQuery): Promise<MemeQueryResult> {
     const constraints: QueryConstraint[] = [];
     let clientTagFilter: string[] | null = null;
+    const expandedTags = q.tags?.length ? expandTagAliases(q.tags) : null;
 
     // Category filter (equality — always safe to combine)
     if (q.category) {
@@ -87,7 +89,7 @@ export class FirebaseMemeService implements MemeService {
     // When both search and tags are present, search goes server-side and
     // tags are post-filtered on the client (see fallback docs above).
     const hasSearch = Boolean(q.searchText?.trim());
-    const hasTags = Boolean(q.tags?.length);
+    const hasTags = Boolean(expandedTags?.length);
 
     if (hasSearch) {
       constraints.push(
@@ -99,11 +101,11 @@ export class FirebaseMemeService implements MemeService {
       );
       if (hasTags) {
         // Cannot combine two array-contains — defer tags to client.
-        clientTagFilter = q.tags!;
+        clientTagFilter = expandedTags!;
       }
     } else if (hasTags) {
       constraints.push(
-        where("tags", "array-contains-any", q.tags!.slice(0, 30)),
+        where("tags", "array-contains-any", expandedTags!.slice(0, 30)),
       );
     }
 

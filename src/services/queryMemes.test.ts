@@ -77,6 +77,11 @@ describe("queryMemes — tags only", () => {
     const ids = await queryIds({ tags: ["nonexistenttag"] });
     expect(ids).toHaveLength(0);
   });
+
+  it("matches tag aliases against canonical stored tags", async () => {
+    const ids = await queryIds({ tags: ["dancing"] });
+    expect(ids).toContain("2");
+  });
 });
 
 // ─── Search + Tags Intersection ─────────────────────────────────────

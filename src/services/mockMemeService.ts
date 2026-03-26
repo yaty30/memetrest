@@ -1,6 +1,7 @@
 import type { MemeService, MemeQueryResult } from "./memeService";
 import type { Meme, MemeQuery } from "../types/meme";
 import { mockMemes } from "./mockData";
+import { expandTagAliases } from "../utils/tagNormalization";
 
 export class MockMemeService implements MemeService {
   async queryMemes(q: MemeQuery): Promise<MemeQueryResult> {
@@ -32,7 +33,7 @@ export class MockMemeService implements MemeService {
     // Tag filter — applied independently of text search (intersection).
     // Matches if the meme has at least one of the requested tags (OR / union).
     if (q.tags?.length) {
-      const tagSet = new Set(q.tags);
+      const tagSet = new Set(expandTagAliases(q.tags));
       results = results.filter((m) => m.tags.some((t) => tagSet.has(t)));
     }
 
