@@ -4,6 +4,7 @@ import { getFirestore, doc, setDoc, Timestamp } from "firebase/firestore";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { normalizeTagList } from "../src/utils/tagNormalization";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,11 +35,51 @@ const MIME_MAP: Record<string, string> = {
 
 const ACCEPTED_EXTS = new Set(Object.keys(MIME_MAP));
 
+const HEIGHTS = [
+  220, 300, 260, 420, 400, 240, 380, 300, 360, 280, 340, 320, 350, 270, 310,
+];
+
+/** Pick a varied height based on index, cycling through the pool. */
+function pickHeight(index: number): number {
+  return HEIGHTS[index % HEIGHTS.length];
+}
+
 function generateTags(title: string): string[] {
-  return title
+  return normalizeTagList(
+    title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 2),
+  );
+}
+
+function generateSearchKeywords(
+  title: string,
+  tags: string[],
+  category: string,
+  description: string,
+): string[] {
+  const keywords = new Set<string>();
+  const allText = [title, ...tags, category, description].join(" ");
+  const words = allText
     .toLowerCase()
     .split(/\s+/)
-    .filter((word) => word.length > 2);
+    .filter((w) => w.length > 0);
+  for (const word of words) {
+    keywords.add(word);
+    for (let i = 2; i <= word.length; i++) {
+      keywords.add(word.substring(0, i));
+    }
+  }
+  return Array.from(keywords);
+}
+
+/** Derive a readable title from the filename (strip ext, GIF source suffixes, clean up). */
+function deriveTitle(fileName: string): string {
+  const withoutExt = fileName.replace(/\.[^.]+$/, "");
+  // Clean up GIF naming patterns like "Dance Dancing GIF by Someone"
+  const cleaned = withoutExt.replace(/\s*GIF\s*(by\s+.*)?$/i, "").trim();
+  return cleaned || withoutExt;
 }
 
 async function uploadAllMemes() {
@@ -49,7 +90,8 @@ async function uploadAllMemes() {
 
   console.log(`Found ${files.length} images to upload...\n`);
 
-  for (const file of files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     const filePath = path.join(MEMES_DIR, file);
     const storageRef = ref(storage, `memes/${file}`);
     const fileBuffer = fs.readFileSync(filePath);
@@ -57,7 +99,10 @@ async function uploadAllMemes() {
     const contentType = MIME_MAP[ext] ?? "image/jpeg";
     const isGif = ext === ".gif";
     const fileNameWithoutExt = file.replace(/\.[^.]+$/, "");
-    const title = `Image ${fileNameWithoutExt}`;
+    const title = deriveTitle(file);
+    const tags = generateTags(title);
+    const category = "uncategorized";
+    const searchKeywords = generateSearchKeywords(title, tags, category, "");
 
     try {
       await uploadBytes(storageRef, fileBuffer, { contentType });
@@ -66,9 +111,10 @@ async function uploadAllMemes() {
       await setDoc(doc(db, "memes", fileNameWithoutExt), {
         title,
         description: "",
-        tags: generateTags(title),
-        category: "uncategorized",
-        height: 300,
+        tags,
+        category,
+        searchKeywords,
+        height: pickHeight(i),
         width: 0,
         imageUrl: url,
         storagePath: `memes/${file}`,
@@ -76,6 +122,15 @@ async function uploadAllMemes() {
         animated: isGif,
         thumbnailUrl: null,
         uploadedAt: Timestamp.now(),
+        createdAt: Timestamp.now(),
+        nsfw: false,
+        sensitive: false,
+        likeCount: 0,
+        shareCount: 0,
+        downloadCount: 0,
+        popularityScore: 0,
+        language: "en",
+        templateName: "",
         overlay: null,
       });
 

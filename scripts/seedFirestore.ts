@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, listAll, getDownloadURL } from "firebase/storage";
 import { getFirestore, doc, setDoc, Timestamp } from "firebase/firestore";
+import { normalizeTagList } from "../src/utils/tagNormalization";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxyxizdaWeAB6JnLl3ANKuBOjULR2X04s",
@@ -45,10 +46,12 @@ const HEIGHTS = [
 ];
 
 function generateTags(title: string): string[] {
-  return title
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word.length > 2);
+  return normalizeTagList(
+    title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 2),
+  );
 }
 
 function generateSearchKeywords(
