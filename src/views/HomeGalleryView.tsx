@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
-import { Skeleton, Box, Fade, Stack } from "@mui/material";
+import { useState } from "react";
+import {
+  Skeleton,
+  Box,
+  Fade,
+  Stack,
+  CircularProgress,
+  Typography,
+  Button,
+} from "@mui/material";
 import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
 import GalleryGrid from "../components/GalleryGrid";
 import FloatingActionButton from "../components/FloatingActionButton";
 import { Lightbox } from "../components/lightbox";
-import { useGalleryImages } from "../hooks/useGalleryImages";
+import { usePaginatedMemes } from "../hooks/usePaginatedMemes";
 import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
 import type { Meme } from "../types/meme";
 import emptyImg from "../assets/empty.png";
@@ -57,7 +65,17 @@ export default function HomeGalleryView() {
     hasActiveFilters,
   } = useDiscoveryFilters();
 
-  const { items, loading, error } = useGalleryImages(searchQuery, filters);
+  const {
+    items,
+    loadingInitial,
+    loadingMore,
+    hasMore,
+    error,
+    paginationError,
+    sentinelRef,
+    scrollContainerRef,
+    loadMore,
+  } = usePaginatedMemes(searchQuery, filters);
 
   const handleTagClick = (tag: string) => {
     toggleTag(tag);
@@ -76,10 +94,10 @@ export default function HomeGalleryView() {
         onSortChange={setSortBy}
         onClearAll={clearFilters}
       />
-      <div className="gallery-scroll">
-        {loading ? (
+      <div className="gallery-scroll" ref={scrollContainerRef}>
+        {loadingInitial ? (
           <GallerySkeleton />
-        ) : error ? (
+        ) : error && items.length === 0 ? (
           <Box
             sx={{
               textAlign: "center",
@@ -132,11 +150,74 @@ export default function HomeGalleryView() {
             </Stack>
           </Box>
         ) : (
-          <GalleryGrid
-            items={items}
-            onSelect={setSelectedItem}
-            onTagClick={handleTagClick}
-          />
+          <>
+            <GalleryGrid
+              items={items}
+              onSelect={setSelectedItem}
+              onTagClick={handleTagClick}
+            />
+
+            {/* Pagination error — retry UI */}
+            {paginationError && (
+              <Box sx={{ textAlign: "center", py: 3 }}>
+                <Typography
+                  sx={{
+                    color: "error.main",
+                    fontSize: "0.8125rem",
+                    mb: 1,
+                  }}
+                >
+                  {error}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={loadMore}
+                  sx={{ textTransform: "none" }}
+                >
+                  Retry
+                </Button>
+              </Box>
+            )}
+
+            {/* Bottom loading indicator for subsequent pages */}
+            {loadingMore && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 3,
+                }}
+              >
+                <CircularProgress size={28} sx={{ color: "text.secondary" }} />
+              </Box>
+            )}
+
+            {/* End-of-feed indicator — only when all items are loaded */}
+            {!hasMore && !loadingMore && !paginationError && (
+              <Box sx={{ textAlign: "center", py: 3, pb: 5 }}>
+                <Typography
+                  sx={{
+                    color: "text.disabled",
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  You've reached the end
+                </Typography>
+              </Box>
+            )}
+
+            {/* Sentinel element — triggers next page load via IntersectionObserver.
+                Only rendered when more items are available and no error is pending. */}
+            {hasMore && !paginationError && (
+              <Box
+                ref={sentinelRef}
+                aria-hidden
+                sx={{ height: 1, width: "100%" }}
+              />
+            )}
+          </>
         )}
       </div>
       <FloatingActionButton />

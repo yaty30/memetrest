@@ -16,7 +16,7 @@ export default function GalleryGrid({
   return (
     <Box
       sx={{
-        columnCount: { xs: 1, sm: 3, md: 4, lg: 5 },
+        columnCount: { xs: 1, sm: 3, md: 4 },
         columnGap: "16px",
         px: { xs: 1.5, sm: 2.5 },
         pb: 5,
