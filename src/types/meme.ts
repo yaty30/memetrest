@@ -22,6 +22,19 @@ export const SORT_OPTIONS = [
 ] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
+/** MIME types accepted for meme uploads. */
+export const SUPPORTED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
+export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
+
+/** Upload size limits (bytes). */
+export const MAX_STATIC_SIZE = 10 * 1024 * 1024; // 10 MB
+export const MAX_GIF_SIZE = 8 * 1024 * 1024; // 8 MB
+
 /** Core meme data model — maps 1:1 to a Firestore document. */
 export interface Meme {
   id: string;
@@ -33,6 +46,11 @@ export interface Meme {
   // Dimensions (for masonry layout)
   width: number;
   height: number;
+
+  // Media metadata
+  mimeType: SupportedMimeType;
+  animated: boolean;
+  thumbnailUrl?: string;
 
   // Discovery metadata
   tags: string[];

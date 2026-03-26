@@ -44,6 +44,9 @@ function mapDoc(docSnap: {
     downloadCount: data.downloadCount ?? 0,
     popularityScore: data.popularityScore ?? 0,
     storagePath: data.storagePath ?? "",
+    mimeType: data.mimeType ?? "image/jpeg",
+    animated: data.animated ?? false,
+    thumbnailUrl: data.thumbnailUrl ?? undefined,
     overlay: data.overlay ?? undefined,
   };
 }

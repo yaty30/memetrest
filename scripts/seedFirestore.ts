@@ -124,6 +124,11 @@ async function seedFirestore() {
       width: 0,
       imageUrl,
       storagePath: `memes/${itemRef.name}`,
+      mimeType: itemRef.name.toLowerCase().endsWith(".gif")
+        ? "image/gif"
+        : "image/jpeg",
+      animated: itemRef.name.toLowerCase().endsWith(".gif"),
+      thumbnailUrl: null,
       uploadedAt: Timestamp.now(),
       createdAt: Timestamp.now(),
       nsfw: false,

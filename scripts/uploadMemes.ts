@@ -24,6 +24,16 @@ const db = getFirestore(app);
 
 const MEMES_DIR = path.resolve(__dirname, "../src/assets/memes");
 
+const MIME_MAP: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+};
+
+const ACCEPTED_EXTS = new Set(Object.keys(MIME_MAP));
+
 function generateTags(title: string): string[] {
   return title
     .toLowerCase()
@@ -34,7 +44,7 @@ function generateTags(title: string): string[] {
 async function uploadAllMemes() {
   const files = fs
     .readdirSync(MEMES_DIR)
-    .filter((f) => f.endsWith(".jpg"))
+    .filter((f) => ACCEPTED_EXTS.has(path.extname(f).toLowerCase()))
     .sort((a, b) => parseInt(a) - parseInt(b));
 
   console.log(`Found ${files.length} images to upload...\n`);
@@ -43,11 +53,14 @@ async function uploadAllMemes() {
     const filePath = path.join(MEMES_DIR, file);
     const storageRef = ref(storage, `memes/${file}`);
     const fileBuffer = fs.readFileSync(filePath);
+    const ext = path.extname(file).toLowerCase();
+    const contentType = MIME_MAP[ext] ?? "image/jpeg";
+    const isGif = ext === ".gif";
     const fileNameWithoutExt = file.replace(/\.[^.]+$/, "");
     const title = `Image ${fileNameWithoutExt}`;
 
     try {
-      await uploadBytes(storageRef, fileBuffer, { contentType: "image/jpeg" });
+      await uploadBytes(storageRef, fileBuffer, { contentType });
       const url = await getDownloadURL(storageRef);
 
       await setDoc(doc(db, "memes", fileNameWithoutExt), {
@@ -59,6 +72,9 @@ async function uploadAllMemes() {
         width: 0,
         imageUrl: url,
         storagePath: `memes/${file}`,
+        mimeType: contentType,
+        animated: isGif,
+        thumbnailUrl: null,
         uploadedAt: Timestamp.now(),
         overlay: null,
       });

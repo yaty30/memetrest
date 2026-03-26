@@ -67,9 +67,10 @@ export default function Lightbox({
 
   const handleDownload = useCallback(() => {
     if (!displayItem) return;
+    const ext = displayItem.animated ? "gif" : "jpg";
     const link = document.createElement("a");
     link.href = displayItem.image;
-    link.download = `${displayItem.title.replace(/\s+/g, "-").toLowerCase()}.jpg`;
+    link.download = `${displayItem.title.replace(/\s+/g, "-").toLowerCase()}.${ext}`;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);

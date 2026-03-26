@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { Meme } from "../types/meme";
+import GifBadge from "./GifBadge";
 
 interface GalleryCardProps {
   item: Meme;
@@ -58,7 +59,9 @@ export default function GalleryCard({
       >
         <Box
           component="img"
-          src={item.image}
+          src={
+            item.animated && item.thumbnailUrl ? item.thumbnailUrl : item.image
+          }
           alt={item.title}
           loading="lazy"
           sx={{
@@ -69,6 +72,8 @@ export default function GalleryCard({
             transition: "transform 0.4s cubic-bezier(0.2,0.8,0.2,1)",
           }}
         />
+
+        {item.animated && <GifBadge />}
 
         {item.overlay && (
           <Box
