@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { expandTagAliases } from "../utils/tagNormalization";
+import { normalizeMediaDimensions } from "../utils/mediaDimensions";
 
 const PAGE_SIZE = 20;
 
@@ -25,12 +26,21 @@ function mapDoc(docSnap: {
 }): Meme {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = docSnap.data() as Record<string, any>;
+  const media = normalizeMediaDimensions({
+    width: Number(data.width),
+    height: Number(data.height),
+    aspectRatio: Number(data.aspectRatio),
+    fallbackWidth: 480,
+    fallbackHeight: 320,
+  });
+
   return {
     id: docSnap.id,
     title: data.title ?? "Untitled",
     image: data.imageUrl ?? "",
-    height: data.height ?? 300,
-    width: data.width ?? 0,
+    height: media.height,
+    width: media.width,
+    aspectRatio: media.aspectRatio,
     description: data.description ?? "",
     tags: data.tags ?? [],
     category: data.category ?? "uncategorized",

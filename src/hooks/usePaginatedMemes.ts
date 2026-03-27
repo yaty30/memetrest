@@ -87,6 +87,7 @@ export function usePaginatedMemes(
     cursorRef.current = null;
     loadingMoreRef.current = false;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState({
       items: [],
       loadingInitial: true,

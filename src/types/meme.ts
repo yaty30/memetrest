@@ -46,6 +46,7 @@ export interface Meme {
   // Dimensions (for masonry layout)
   width: number;
   height: number;
+  aspectRatio: number;
 
   // Media metadata
   mimeType: SupportedMimeType;
