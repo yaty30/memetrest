@@ -58,7 +58,11 @@ function mapDoc(docSnap: {
     mimeType: data.mimeType ?? "image/jpeg",
     animated: data.animated ?? false,
     thumbnailUrl: data.thumbnailUrl ?? undefined,
+    uploadedBy: data.uploadedBy ?? undefined,
     overlay: data.overlay ?? undefined,
+    status: data.status ?? "approved",
+    moderatedBy: data.moderatedBy ?? undefined,
+    moderatedAt: data.moderatedAt?.toDate() ?? undefined,
   };
 }
 

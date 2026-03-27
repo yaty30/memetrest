@@ -1,3 +1,5 @@
+import type { AssetStatus } from "./user";
+
 /** Categories available for meme filtering. */
 export const MEME_CATEGORIES = [
   "reaction",
@@ -71,10 +73,16 @@ export interface Meme {
   popularityScore: number;
 
   // Uploader
+  uploadedBy?: string;
   overlay?: {
     avatar: string;
     name: string;
   };
+
+  // Moderation
+  status: AssetStatus;
+  moderatedBy?: string;
+  moderatedAt?: Date;
 }
 
 /** Backward-compat alias during migration. */

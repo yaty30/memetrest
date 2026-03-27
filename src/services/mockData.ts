@@ -3,8 +3,10 @@ import type { Meme } from "../types/meme";
 /**
  * Realistic dummy meme data that mirrors the Firestore document shape.
  * Heights vary to produce a natural masonry layout.
+ *
+ * All mock memes default to status "approved" for gallery display.
  */
-export const mockMemes: Meme[] = [
+const baseMemes: Omit<Meme, "status">[] = [
   {
     id: "1",
     title: "Distracted Boyfriend",
@@ -334,3 +336,8 @@ export const mockMemes: Meme[] = [
     },
   },
 ];
+
+export const mockMemes: Meme[] = baseMemes.map((m) => ({
+  ...m,
+  status: "approved" as const,
+}));
