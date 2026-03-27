@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Fade, Stack, Typography, Button } from "@mui/material";
 import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
 import GalleryGrid from "../components/GalleryGrid";
 import FloatingActionButton from "../components/FloatingActionButton";
-import { Lightbox } from "../components/lightbox";
 import { usePaginatedMemes } from "../hooks/usePaginatedMemes";
 import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
 import type { Meme } from "../types/meme";
@@ -13,8 +13,20 @@ import emptyImg from "../assets/empty.png";
 const LABEL = "NOTHING_TO_SEE_HERE".split("");
 
 export default function HomeGalleryView() {
-  const [selectedItem, setSelectedItem] = useState<Meme | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") ?? "",
+  );
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value) {
+      setSearchParams({ search: value }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   const {
     filters,
@@ -37,13 +49,17 @@ export default function HomeGalleryView() {
     loadMore,
   } = usePaginatedMemes(searchQuery, filters);
 
+  const handleSelect = (meme: Meme) => {
+    navigate(`/meme/${meme.id}`);
+  };
+
   const handleTagClick = (tag: string) => {
     toggleTag(tag);
   };
 
   return (
     <>
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      <SearchBar value={searchQuery} onChange={handleSearchChange} />
       <FilterBar
         activeCategory={filters.activeCategory}
         activeTags={filters.activeTags}
@@ -59,7 +75,7 @@ export default function HomeGalleryView() {
           <GalleryGrid
             items={[]}
             loading
-            onSelect={setSelectedItem}
+            onSelect={handleSelect}
             onTagClick={handleTagClick}
           />
         ) : error && items.length === 0 ? (
@@ -119,7 +135,7 @@ export default function HomeGalleryView() {
             <GalleryGrid
               items={items}
               loadingMore={loadingMore}
-              onSelect={setSelectedItem}
+              onSelect={handleSelect}
               onTagClick={handleTagClick}
             />
 
@@ -174,13 +190,6 @@ export default function HomeGalleryView() {
         )}
       </div>
       <FloatingActionButton />
-
-      <Lightbox
-        item={selectedItem}
-        open={selectedItem !== null}
-        onClose={() => setSelectedItem(null)}
-        onTagClick={handleTagClick}
-      />
     </>
   );
 }
