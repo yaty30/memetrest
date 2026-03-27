@@ -1,4 +1,4 @@
-import logoSrc from "../assets/logo.jpg";
+import logoSrc from "../assets/logo.png";
 
 interface LogoProps {
   size?: number;
@@ -10,9 +10,11 @@ const Logo = ({ size = 36 }: LogoProps) => (
     alt="memetrest"
     width={size}
     height={size}
+    draggable={false}
+    onContextMenu={(e) => e.preventDefault()}
     style={{
-      borderRadius: "50%",
       objectFit: "cover",
+      filter: "grayscale(100%) brightness(70%)",
       display: "block",
       flexShrink: 0,
     }}
