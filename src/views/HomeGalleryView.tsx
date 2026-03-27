@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Skeleton,
-  Box,
-  Fade,
-  Stack,
-  CircularProgress,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Box, Fade, Stack, Typography, Button } from "@mui/material";
 import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
 import GalleryGrid from "../components/GalleryGrid";
@@ -18,39 +10,7 @@ import { useDiscoveryFilters } from "../hooks/useDiscoveryFilters";
 import type { Meme } from "../types/meme";
 import emptyImg from "../assets/empty.png";
 
-const SKELETON_HEIGHTS = [
-  220, 300, 260, 420, 400, 240, 380, 300, 360, 300, 380, 280,
-];
-
 const LABEL = "NOTHING_TO_SEE_HERE".split("");
-
-function GallerySkeleton() {
-  return (
-    <Box
-      sx={{
-        columnCount: { xs: 2, sm: 3, md: 4 },
-        columnGap: "16px",
-        px: { xs: 1.5, sm: 2.5 },
-        pb: 5,
-      }}
-    >
-      {SKELETON_HEIGHTS.map((h, i) => (
-        <Skeleton
-          key={i}
-          variant="rounded"
-          animation="wave"
-          sx={{
-            width: "100%",
-            height: h,
-            borderRadius: "16px",
-            mb: "14px",
-            breakInside: "avoid",
-          }}
-        />
-      ))}
-    </Box>
-  );
-}
 
 export default function HomeGalleryView() {
   const [selectedItem, setSelectedItem] = useState<Meme | null>(null);
@@ -96,7 +56,12 @@ export default function HomeGalleryView() {
       />
       <div className="gallery-scroll" ref={scrollContainerRef}>
         {loadingInitial ? (
-          <GallerySkeleton />
+          <GalleryGrid
+            items={[]}
+            loading
+            onSelect={setSelectedItem}
+            onTagClick={handleTagClick}
+          />
         ) : error && items.length === 0 ? (
           <Box
             sx={{
@@ -153,6 +118,7 @@ export default function HomeGalleryView() {
           <>
             <GalleryGrid
               items={items}
+              loadingMore={loadingMore}
               onSelect={setSelectedItem}
               onTagClick={handleTagClick}
             />
@@ -177,19 +143,6 @@ export default function HomeGalleryView() {
                 >
                   Retry
                 </Button>
-              </Box>
-            )}
-
-            {/* Bottom loading indicator for subsequent pages */}
-            {loadingMore && (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  py: 3,
-                }}
-              >
-                <CircularProgress size={28} sx={{ color: "text.secondary" }} />
               </Box>
             )}
 
