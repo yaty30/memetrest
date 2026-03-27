@@ -10,6 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
   Snackbar,
+  Skeleton,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -19,6 +20,7 @@ import CodeIcon from "@mui/icons-material/Code";
 import LinkIcon from "@mui/icons-material/Link";
 import type { Meme } from "../types/meme";
 import GifBadge from "./GifBadge";
+import { normalizeMediaDimensions } from "../utils/mediaDimensions";
 
 interface GalleryCardProps {
   item: Meme;
@@ -32,6 +34,7 @@ export default function GalleryCard({
   onTagClick,
 }: GalleryCardProps) {
   const [liked, setLiked] = useState(false);
+  const [isMediaLoaded, setIsMediaLoaded] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [snackMsg, setSnackMsg] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
@@ -72,6 +75,23 @@ export default function GalleryCard({
   };
 
   const displayName = item.overlay?.name ?? "Anonymous";
+  const hasMissingDimensions =
+    !Number.isFinite(item.width) ||
+    !Number.isFinite(item.height) ||
+    item.width <= 0 ||
+    item.height <= 0;
+  if (hasMissingDimensions) {
+    console.warn(
+      `[GalleryCard] Missing or invalid dimensions for "${item.id}": width=${item.width}, height=${item.height}. Using fallback.`,
+    );
+  }
+  const media = normalizeMediaDimensions({
+    width: item.width,
+    height: item.height,
+    aspectRatio: item.aspectRatio,
+    fallbackWidth: 480,
+    fallbackHeight: 320,
+  });
 
   return (
     <>
@@ -92,7 +112,7 @@ export default function GalleryCard({
             boxShadow: theme.palette.customShadows.cardHover,
           },
           "&:hover .card-hover-overlay": { opacity: 1 },
-          "&:hover .card-media-wrapper img": {
+          "&:hover .card-media-wrapper .card-media-image": {
             transform: "scale(1.03)",
           },
           // Mobile: always show overlay lightly
@@ -108,28 +128,46 @@ export default function GalleryCard({
             borderRadius: "16px",
             overflow: "hidden",
             willChange: "transform",
-            bgcolor: "#1a1a1a",
-            // Reserve space via aspect-ratio to prevent layout shift.
-            // Capped so very tall images don't dominate the feed.
-            ...(item.width > 0 && item.height > 0
-              ? { aspectRatio: `${item.width} / ${item.height}` }
-              : { minHeight: 180 }),
-            maxHeight: 460,
+            // Reserve deterministic space from persisted metadata.
+            aspectRatio: `${media.width} / ${media.height}`,
+            bgcolor: "rgba(255,255,255,0.04)",
           }}
         >
-          {/* Image — uses contain so the full image is always visible.
-              Letterboxed space shows the dark wrapper background. */}
+          <Skeleton
+            variant="rectangular"
+            animation="wave"
+            height="100%"
+            width="100%"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              opacity: isMediaLoaded ? 0 : 1,
+              transition: "opacity 0.25s ease",
+              pointerEvents: "none",
+            }}
+          />
+
           <Box
             component="img"
+            className="card-media-image"
             src={item.image}
             alt={item.title}
             loading="lazy"
+            width={media.width}
+            height={media.height}
+            onLoad={() => setIsMediaLoaded(true)}
+            onError={() => setIsMediaLoaded(true)}
             sx={{
-              display: "block",
+              position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
-              objectFit: "contain",
-              transition: "transform 0.4s cubic-bezier(0.2,0.8,0.2,1)",
+              // Wrapper and media share the same stored ratio, so cover prevents letterboxing.
+              objectFit: "cover",
+              opacity: isMediaLoaded ? 1 : 0,
+              transition:
+                "opacity 0.25s ease, transform 0.4s cubic-bezier(0.2,0.8,0.2,1)",
             }}
           />
 
