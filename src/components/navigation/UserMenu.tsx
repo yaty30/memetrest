@@ -8,6 +8,7 @@ import {
   ListItemIcon,
   ListItemText,
   ButtonBase,
+  Button,
   Box,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -16,6 +17,10 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon from "@mui/icons-material/Login";
+import { useAuth } from "../../providers/AuthProvider";
+import { signOut } from "../../services/authService";
+import SignInDialog from "../SignInDialog";
 
 const MENU_ITEMS = [
   { label: "Profile", icon: <PersonOutlineIcon fontSize="small" /> },
@@ -25,8 +30,52 @@ const MENU_ITEMS = [
 ] as const;
 
 export default function UserMenu() {
+  const { firebaseUser, userProfile, loading } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [signInOpen, setSignInOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  const handleMenuAction = async (label: string) => {
+    setAnchorEl(null);
+    if (label === "Logout") {
+      await signOut();
+    }
+  };
+
+  // Show sign-in button when not authenticated
+  if (!loading && !firebaseUser) {
+    return (
+      <>
+        <Button
+          variant="outlined"
+          startIcon={<LoginIcon />}
+          onClick={() => setSignInOpen(true)}
+          size="small"
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: "999px",
+            px: 2,
+            fontSize: "0.8125rem",
+          }}
+        >
+          Sign In
+        </Button>
+        <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
+      </>
+    );
+  }
+
+  // Loading or authenticated — show avatar menu
+  const displayName =
+    userProfile?.displayName || firebaseUser?.displayName || "";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  const photoURL = userProfile?.photoURL || firebaseUser?.photoURL || null;
 
   return (
     <>
@@ -44,6 +93,7 @@ export default function UserMenu() {
         <Stack direction="row" alignItems="center" spacing={1.2}>
           <Box sx={{ position: "relative" }}>
             <Avatar
+              src={photoURL ?? undefined}
               sx={(theme) => ({
                 width: 34,
                 height: 34,
@@ -53,7 +103,7 @@ export default function UserMenu() {
                 color: "primary.main",
               })}
             >
-              TG
+              {initials || "?"}
             </Avatar>
             <Box
               sx={(theme) => ({
@@ -77,7 +127,7 @@ export default function UserMenu() {
               display: { xs: "none", sm: "block" },
             }}
           >
-            Tiffany
+            {displayName.split(" ")[0] || "User"}
           </Typography>
 
           <KeyboardArrowDownIcon
@@ -112,7 +162,7 @@ export default function UserMenu() {
         {MENU_ITEMS.map((item, idx) => (
           <MenuItem
             key={item.label}
-            onClick={() => setAnchorEl(null)}
+            onClick={() => handleMenuAction(item.label)}
             sx={{
               py: 1.2,
               px: 2,
