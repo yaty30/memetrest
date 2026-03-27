@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+
+    function isModerator() {
+      return isSignedIn() && getUserRole() in ['admin', 'moderator'];
+    }
+
+    function userIsActive() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // ── users/{uid} ───────────────────────────────────────────────────
+    // Anyone can read profiles. Only the owner can create/update their
+    // own doc (except role/status, which only admins can change).
+    match /users/{uid} {
+      allow read: if true;
+
+      // Owner creates their own profile on first login
+      allow create: if isOwner(uid)
+        && request.resource.data.role == 'user'
+        && request.resource.data.status == 'active';
+
+      // Owner can update non-privileged fields
+      allow update: if isOwner(uid)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status;
+
+      // Admin can change any field (including role/status)
+      allow update: if isAdmin();
+
+      allow delete: if false;
+    }
+
+    // ── memes/{memeId} ────────────────────────────────────────────────
+    match /memes/{memeId} {
+      // Public gallery: anyone can read approved memes.
+      // Moderators & admins can read all memes.
+      // The uploader can read their own memes regardless of status.
+      allow read: if resource.data.status == 'approved'
+        || (isSignedIn() && resource.data.uploadedBy == request.auth.uid)
+        || isModerator();
+
+      // Authenticated, active users can create memes.
+      // New memes must default to status=pending and set uploadedBy to the caller.
+      allow create: if isSignedIn()
+        && userIsActive()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.uploadedBy == request.auth.uid;
+
+      // Only moderators/admins can change the status (approve/reject).
+      allow update: if isModerator();
+
+      allow delete: if isAdmin();
+    }
+  }
+}
