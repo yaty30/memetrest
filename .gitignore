@@ -28,3 +28,10 @@ dist-ssr
 *.sw?
 
 /traces/*
+
+# Firebase service account keys
+firebaseServiceAccount.json
+**/serviceAccount*.json
+
+# Generated reports
+/reports/
