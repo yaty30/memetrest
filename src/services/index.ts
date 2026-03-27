@@ -3,6 +3,7 @@ import { MockMemeService } from "./mockMemeService";
 import { FirebaseMemeService } from "./firebaseMemeService";
 
 export { validateMemeFile } from "./uploadValidation";
+export { extractMediaMetadata } from "./mediaMetadata";
 
 const dataSource = import.meta.env.VITE_DATA_SOURCE ?? "mock";
 
