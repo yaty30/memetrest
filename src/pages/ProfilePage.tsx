@@ -76,6 +76,11 @@ export default function ProfilePage() {
               xs: "none",
               sm: "0 0 0 1px rgba(255,255,255,0.04), 0 2px 12px rgba(0,0,0,0.25)",
             },
+            "@keyframes fadeSlideIn": {
+              from: { opacity: 0, transform: "translateY(-8px)" },
+              to: { opacity: 1, transform: "translateY(0)" },
+            },
+            animation: "fadeSlideIn 0.35s ease-out",
           }}
         >
           <ProfileView
