@@ -1,4 +1,8 @@
-import type { MemeService, MemeQueryResult } from "./memeService";
+import type {
+  MemeService,
+  MemeQueryResult,
+  OwnerMemesQuery,
+} from "./memeService";
 import type { Meme, MemeQuery } from "../types/meme";
 import { mockMemes } from "./mockData";
 import { expandTagAliases } from "../utils/tagNormalization";
@@ -53,6 +57,31 @@ export class MockMemeService implements MemeService {
     }
 
     // Pagination
+    const pageSize = q.limit ?? 30;
+    const cursorIdx = q.cursor
+      ? results.findIndex((m) => m.id === q.cursor) + 1
+      : 0;
+    const page = results.slice(cursorIdx, cursorIdx + pageSize);
+    const hasMore = cursorIdx + pageSize < results.length;
+
+    return {
+      items: page,
+      nextCursor: page.length > 0 ? page[page.length - 1].id : null,
+      hasMore,
+    };
+  }
+
+  async queryMemesByOwner(q: OwnerMemesQuery): Promise<MemeQueryResult> {
+    await new Promise((r) => setTimeout(r, 300));
+
+    let results = mockMemes.filter((m) => m.uploadedBy === q.ownerUid);
+
+    if (!q.includeAllStatuses) {
+      results = results.filter((m) => m.status === "approved");
+    }
+
+    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     const pageSize = q.limit ?? 30;
     const cursorIdx = q.cursor
       ? results.findIndex((m) => m.id === q.cursor) + 1

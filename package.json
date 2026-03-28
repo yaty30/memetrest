@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "audit:image-dimensions": "node scripts/verifyFirestoreImageDimensions.mjs",
     "backfill:image-dimensions": "node scripts/backfillFirestoreIntrinsicDimensions.mjs",
-    "backfill:image-dimensions:fix": "node scripts/backfillFirestoreIntrinsicDimensions.mjs --fix"
+    "backfill:image-dimensions:fix": "node scripts/backfillFirestoreIntrinsicDimensions.mjs --fix",
+    "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

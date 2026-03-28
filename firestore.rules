@@ -39,7 +39,7 @@ service cloud.firestore {
         && request.resource.data.role == 'user'
         && request.resource.data.status == 'active';
 
-      // Owner can update non-privileged fields
+      // Owner can update non-privileged fields (role and status must stay the same)
       allow update: if isOwner(uid)
         && request.resource.data.role == resource.data.role
         && request.resource.data.status == resource.data.status;
@@ -48,6 +48,33 @@ service cloud.firestore {
       allow update: if isAdmin();
 
       allow delete: if false;
+    }
+
+    // ── profileAssets/{assetId} ───────────────────────────────────────
+    // Public read for asset pickers and profile rendering.
+    // Writes are admin-only (presets managed via scripts/Admin SDK).
+    match /profileAssets/{assetId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── usernames/{username} ──────────────────────────────────────────
+    // Username uniqueness index. Reads are public (for availability
+    // checks). Creates/deletes happen inside transactions from the
+    // client, guarded by ownership checks.
+    match /usernames/{username} {
+      allow read: if true;
+
+      // Only authenticated users can claim a username, and the doc
+      // must record their own UID.
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+
+      // Only the owner of the username doc (or an admin) can delete it.
+      allow delete: if isSignedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow update: if false;
     }
 
     // ── memes/{memeId} ────────────────────────────────────────────────

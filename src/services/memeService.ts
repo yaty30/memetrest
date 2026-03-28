@@ -6,6 +6,14 @@ export interface MemeQueryResult {
   hasMore: boolean;
 }
 
+export interface OwnerMemesQuery {
+  ownerUid: string;
+  /** When true, include non-approved statuses (for own-profile view). */
+  includeAllStatuses?: boolean;
+  limit?: number;
+  cursor?: string;
+}
+
 /**
  * Abstract contract for meme data access.
  * Implementations: FirebaseMemeService (production), MockMemeService (development).
@@ -13,6 +21,9 @@ export interface MemeQueryResult {
 export interface MemeService {
   /** Fetch memes with filtering, sorting, and pagination. */
   queryMemes(query: MemeQuery): Promise<MemeQueryResult>;
+
+  /** Fetch memes uploaded by a specific user, newest first. */
+  queryMemesByOwner(query: OwnerMemesQuery): Promise<MemeQueryResult>;
 
   /** Fetch a single meme by ID. */
   getMemeById(id: string): Promise<Meme | null>;

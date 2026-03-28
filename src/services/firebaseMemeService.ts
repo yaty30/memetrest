@@ -1,4 +1,8 @@
-import type { MemeService, MemeQueryResult } from "./memeService";
+import type {
+  MemeService,
+  MemeQueryResult,
+  OwnerMemesQuery,
+} from "./memeService";
 import type { Meme, MemeQuery } from "../types/meme";
 import {
   collection,
@@ -199,6 +203,42 @@ export class FirebaseMemeService implements MemeService {
     }
 
     // Standard path: single fetch, no client-side filtering needed.
+    if (q.cursor) {
+      const cursorSnap = await getDoc(doc(this.memesCol, q.cursor));
+      if (cursorSnap.exists()) {
+        constraints.push(startAfter(cursorSnap));
+      }
+    }
+
+    const fetchSize = pageSize + 1;
+    constraints.push(fsLimit(fetchSize));
+
+    const snapshot = await getDocs(query(this.memesCol, ...constraints));
+    const items = snapshot.docs.map(mapDoc);
+    const hasMore = items.length > pageSize;
+    const pageItems = hasMore ? items.slice(0, pageSize) : items;
+
+    return {
+      items: pageItems,
+      nextCursor:
+        pageItems.length > 0 ? pageItems[pageItems.length - 1].id : null,
+      hasMore,
+    };
+  }
+
+  async queryMemesByOwner(q: OwnerMemesQuery): Promise<MemeQueryResult> {
+    const constraints: QueryConstraint[] = [
+      where("uploadedBy", "==", q.ownerUid),
+    ];
+
+    if (!q.includeAllStatuses) {
+      constraints.push(where("status", "==", "approved"));
+    }
+
+    constraints.push(orderBy("createdAt", "desc"));
+
+    const pageSize = q.limit ?? PAGE_SIZE;
+
     if (q.cursor) {
       const cursorSnap = await getDoc(doc(this.memesCol, q.cursor));
       if (cursorSnap.exists()) {
