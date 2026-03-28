@@ -148,7 +148,7 @@ export const FALLBACK_AVATAR: ProfileAssetRef = {
 
 export const FALLBACK_BANNER: ProfileAssetRef = {
   assetId: "preset-banner-001",
-  url: "/assets/profile/banners/1.png",
+  url: "/assets/profile/banners/1.jpeg",
   kind: "banner",
   ownership: "preset",
 };
