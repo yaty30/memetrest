@@ -1,14 +1,13 @@
 import { Box } from "@mui/material";
 import AppNavbar from "../components/navigation/AppNavbar";
 import HomeGalleryView from "../views/HomeGalleryView";
-
-const MAX_WIDTHS = {
-  xs: "100%",
-  sm: 900,
-  md: 1100,
-  lg: 1300,
-  xl: 1450,
-};
+import {
+  PAGE_CONTENT_PADDING_BOTTOM,
+  PAGE_CONTENT_PADDING_TOP,
+  PAGE_CONTENT_PADDING_X,
+  PAGE_MAX_WIDTH,
+  PAGE_NAV_PADDING_X,
+} from "./pageLayout";
 export default function HomePage() {
   return (
     <Box
@@ -24,9 +23,9 @@ export default function HomePage() {
       <Box
         sx={{
           width: "100%",
-          maxWidth: MAX_WIDTHS,
+          maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
-          px: { xs: 1.5, sm: 3 },
+          px: PAGE_NAV_PADDING_X,
           pt: { xs: 1.5, sm: 2 },
           pb: 0,
           boxSizing: "border-box",
@@ -42,11 +41,11 @@ export default function HomePage() {
           flex: 1,
           minHeight: 0,
           width: "100%",
-          maxWidth: MAX_WIDTHS,
+          maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
-          px: { xs: 1.5, sm: 3 },
-          pt: { xs: 1.5, sm: 2 },
-          pb: { xs: 1.5, sm: 2.5 },
+          px: PAGE_CONTENT_PADDING_X,
+          pt: PAGE_CONTENT_PADDING_TOP,
+          pb: PAGE_CONTENT_PADDING_BOTTOM,
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",

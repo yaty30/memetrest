@@ -1,19 +1,32 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import AppNavbar from "../components/navigation/AppNavbar";
 import ProfileView from "../views/ProfileView";
 import { useProfileData } from "../hooks/useProfileData";
+import {
+  PAGE_CONTENT_PADDING_BOTTOM,
+  PAGE_CONTENT_PADDING_TOP,
+  PAGE_CONTENT_PADDING_X,
+  PAGE_MAX_WIDTH,
+  PAGE_NAV_PADDING_X,
+} from "./pageLayout";
 
 /**
- * Desktop: generous 1400px max. The container uses background.paper so it
- * lifts cleanly off the dark body gradient. On mobile the surface goes
- * full-bleed (no border-radius, no horizontal padding) so it feels native.
+ * Home and profile share the same outer width and gutters so both pages align.
  */
-const PAGE_MAX_WIDTH = { xs: "100%", sm: 960, md: 1280, lg: 1400 };
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
   const { profile, loading, isOwnProfile, notFound } = useProfileData(username);
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  };
 
   return (
     <Box
@@ -29,7 +42,7 @@ export default function ProfilePage() {
           width: "100%",
           maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
-          px: { xs: 1.5, sm: 3 },
+          px: PAGE_NAV_PADDING_X,
           pt: { xs: 1.5, sm: 2 },
           pb: 0,
           boxSizing: "border-box",
@@ -46,9 +59,9 @@ export default function ProfilePage() {
           width: "100%",
           maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
-          px: { xs: 0, sm: 2.5 },
-          pt: { xs: 0, sm: 2 },
-          pb: { xs: 0, sm: 3 },
+          px: PAGE_CONTENT_PADDING_X,
+          pt: PAGE_CONTENT_PADDING_TOP,
+          pb: PAGE_CONTENT_PADDING_BOTTOM,
           boxSizing: "border-box",
         }}
       >
@@ -70,6 +83,7 @@ export default function ProfilePage() {
             loading={loading}
             isOwnProfile={isOwnProfile}
             notFound={notFound}
+            onBack={handleBack}
           />
         </Box>
       </Box>

@@ -1,7 +1,7 @@
 import { Box, Typography, CircularProgress } from "@mui/material";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import ProfileHeader from "../components/profile/ProfileHeader";
+import { ProfileHeader } from "../components/profile";
 import ProfileTabs from "../components/profile/ProfileTabs";
 import type { UserProfile } from "../types/user";
 
@@ -10,6 +10,7 @@ interface ProfileViewProps {
   loading: boolean;
   isOwnProfile: boolean;
   notFound: boolean;
+  onBack?: () => void;
 }
 
 /** Centered status state used for loading / not-found / sign-in. */
@@ -57,6 +58,7 @@ export default function ProfileView({
   loading,
   isOwnProfile,
   notFound,
+  onBack,
 }: ProfileViewProps) {
   if (loading) {
     return (
@@ -95,7 +97,11 @@ export default function ProfileView({
 
   return (
     <Box>
-      <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
+      <ProfileHeader
+        profile={profile}
+        isOwnProfile={isOwnProfile}
+        onBack={onBack}
+      />
       <ProfileTabs profile={profile} isOwnProfile={isOwnProfile} />
     </Box>
   );
