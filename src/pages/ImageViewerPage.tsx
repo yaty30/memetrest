@@ -416,13 +416,10 @@ function MemeDetailContent({
               mediaMaxHeight !== null
                 ? `${mediaMaxHeight}px`
                 : { xs: "min(52vh, 460px)", md: "min(60vh, 640px)" },
-            width: {
-              xs: "min(78vw, 480px)",
-              md: "min(58vw, 640px)",
-            },
+            width: "100%",
             maxWidth: {
               xs: "calc(100% - 88px)",
-              md: "min(calc(100% - 96px), 640px)",
+              md: "calc(100% - 96px)",
             },
           }}
         >
@@ -432,13 +429,8 @@ function MemeDetailContent({
             alt={meme.title}
             sx={{
               display: "block",
-              maxHeight:
-                mediaMaxHeight !== null
-                  ? `${mediaMaxHeight}px`
-                  : { xs: "min(52vh, 460px)", md: "min(60vh, 640px)" },
-              width: "auto",
-              maxWidth: "100%",
-              height: "auto",
+              width: "100%",
+              height: "100%",
               objectFit: "contain",
             }}
           />
