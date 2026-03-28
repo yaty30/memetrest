@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { Box, IconButton } from "@mui/material";
@@ -21,6 +22,19 @@ export default function ProfileHeaderBanner({
   onBannerError,
   onChangeBanner,
 }: ProfileHeaderBannerProps) {
+  const [isBannerLoading, setIsBannerLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showBanner || !bannerUrl) {
+      setIsBannerLoading(false);
+      return;
+    }
+    setIsBannerLoading(true);
+  }, [bannerUrl, onBannerError, showBanner]);
+
+  const hasBanner = showBanner && !!bannerUrl;
+  const shouldShowBannerImage = hasBanner && !isBannerLoading;
+
   return (
     <Box
       sx={{
@@ -29,7 +43,7 @@ export default function ProfileHeaderBanner({
         height: BANNER_H,
         overflow: "hidden",
         bgcolor: "surface.input",
-        ...(!showBanner && {
+        ...(!shouldShowBannerImage && {
           background:
             "linear-gradient(135deg, rgba(30,30,30,1) 0%, rgba(40,40,40,1) 50%, rgba(25,25,25,1) 100%)",
         }),
@@ -39,12 +53,18 @@ export default function ProfileHeaderBanner({
         }),
       }}
     >
-      {showBanner && (
+      {hasBanner && (
         <Box
           component="img"
           src={bannerUrl}
           alt=""
-          onError={onBannerError}
+          onLoad={() => setIsBannerLoading(false)}
+          onError={() => {
+            setIsBannerLoading(false);
+            onBannerError();
+          }}
+          loading="eager"
+          fetchPriority="high"
           sx={{
             position: "absolute",
             inset: 0,
@@ -59,7 +79,7 @@ export default function ProfileHeaderBanner({
         sx={{
           position: "absolute",
           inset: 0,
-          background: showBanner
+          background: shouldShowBannerImage
             ? "linear-gradient(0deg, rgba(18,18,18,0.7) 0%, rgba(18,18,18,0.2) 40%, transparent 70%)"
             : "linear-gradient(0deg, rgba(18,18,18,0.5) 0%, transparent 60%)",
           pointerEvents: "none",
