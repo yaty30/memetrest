@@ -39,12 +39,6 @@ function fmtJoined(d: Date) {
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-const BAR_CONTENT_LIFT_MD = Math.round(BAR_OVERLAP.md / 3);
-const BAR_CONTENT_TRANSFORM = {
-  xs: "none",
-  md: `translateY(-${BAR_CONTENT_LIFT_MD}px)`,
-} as const;
-
 export default function ProfileHeaderBar({
   profile,
   name,
@@ -82,12 +76,7 @@ export default function ProfileHeaderBar({
           boxShadow: `0 2px 16px ${alpha("#000", 0.25)}`,
           display: "flex",
           alignItems: "center",
-          pt: {
-            xs: `${AVATAR_PROTRUDE.xs + 8}px`,
-            sm: `${AVATAR_SIZE.sm - AVATAR_PROTRUDE.sm + 6}px`,
-            md: `${AVATAR_SIZE.md - AVATAR_PROTRUDE.md + 6}px`,
-          },
-          pb: { xs: 1.25, sm: 1, md: 1.25 },
+          py: { xs: 1.25, sm: 1, md: 1.25 },
           px: { xs: 1.5, sm: 2, md: 3 },
           flexDirection: { xs: "column", sm: "row" },
           gap: { xs: 0.75, sm: 0 },
@@ -102,7 +91,7 @@ export default function ProfileHeaderBar({
               md: `-${AVATAR_PROTRUDE.md}px`,
             },
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: "translateX(-50%) translateY(-24%)",
             zIndex: 4,
             ...(isOwnProfile && {
               "&:hover .avatar-edit-btn": { opacity: 1 },
@@ -123,14 +112,14 @@ export default function ProfileHeaderBar({
               width: AVATAR_SIZE,
               height: AVATAR_SIZE,
               overflow: "hidden",
-              borderRadius: 0,
+              borderRadius: 1,
               clipPath: "polygon(0% 0%, 100% 0%, 92% 100%, 8% 100%)",
               border: `${AVATAR_RING}px solid ${alpha(theme.palette.background.paper, 0.5)}`,
               bgcolor: alpha(theme.palette.primary.main, 0.15),
               fontSize: { xs: "1.2rem", sm: "1.4rem", md: "1.7rem" },
               fontWeight: 700,
               color: "primary.main",
-              boxShadow: `0 4px 16px ${alpha("#000", 0.45)}, 0 0 0 1px ${alpha("#fff", 0.06)}`,
+              boxShasdow: `0 4px 16px ${alpha("#000", 0.45)}, 0 0 0 1px ${alpha("#fff", 0.06)}`,
               "& img": {
                 width: "100%",
                 height: "100%",
@@ -153,8 +142,8 @@ export default function ProfileHeaderBar({
                 position: "absolute",
                 bottom: -2,
                 right: -4,
-                width: { xs: 22, md: 26 },
-                height: { xs: 22, md: 26 },
+                width: { xs: 26, md: 30 },
+                height: { xs: 26, md: 30 },
                 bgcolor: alpha(theme.palette.background.paper, 0.9),
                 border: `2px solid ${alpha(theme.palette.background.paper, 0.6)}`,
                 borderRadius: "8px",
@@ -164,7 +153,7 @@ export default function ProfileHeaderBar({
                 "&:hover": { bgcolor: theme.palette.background.paper },
               })}
             >
-              <CameraAltOutlinedIcon sx={{ fontSize: { xs: 12, md: 14 } }} />
+              <CameraAltOutlinedIcon sx={{ fontSize: { xs: 14, md: 16 } }} />
             </IconButton>
           )}
         </Box>
@@ -177,7 +166,6 @@ export default function ProfileHeaderBar({
             order: { xs: 2, sm: 1 },
             flex: { sm: 1 },
             justifyContent: { xs: "center", sm: "flex-start" },
-            transform: BAR_CONTENT_TRANSFORM,
           }}
         >
           <StatBlock value={profile.uploadCount} label="Uploads" />
@@ -211,7 +199,6 @@ export default function ProfileHeaderBar({
           spacing={{ xs: 0.5, sm: 0.75 }}
           alignItems="center"
           sx={{
-            transform: BAR_CONTENT_TRANSFORM,
             order: 3,
             flex: { sm: 1 },
             justifyContent: { xs: "center", sm: "flex-end" },
@@ -224,11 +211,11 @@ export default function ProfileHeaderBar({
             sx={{ display: { xs: "none", sm: "flex" }, mr: 0.5 }}
           >
             <CalendarMonthOutlinedIcon
-              sx={{ fontSize: 12, color: "text.disabled" }}
+              sx={{ fontSize: 16, color: "text.disabled" }}
             />
             <Typography
               sx={{
-                fontSize: "0.68rem",
+                fontSize: "0.75rem",
                 color: "text.disabled",
                 whiteSpace: "nowrap",
               }}
