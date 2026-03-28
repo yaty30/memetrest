@@ -55,13 +55,21 @@ function timeAgo(date: Date): string {
   return `${Math.floor(months / 12)}y ago`;
 }
 
+const metaChipSx = {
+  height: 26,
+  borderColor: "divider",
+  opacity: 0.85,
+  "& .MuiChip-icon": { ml: 0.75, mr: -0.25 },
+  "& .MuiChip-label": { fontSize: "0.74rem", px: 0.75, fontWeight: 500 },
+} as const;
+
 function MetadataSummary({ meme }: { meme: Meme }) {
   const posted = meme.createdAt ? timeAgo(meme.createdAt) : "Unknown date";
 
   return (
     <Stack
       direction="row"
-      spacing={1}
+      spacing={1.25}
       alignItems="center"
       flexWrap="wrap"
       useFlexGap
@@ -104,50 +112,34 @@ function MetadataSummary({ meme }: { meme: Meme }) {
 
       <Chip
         size="small"
-        icon={<Calendar size={14} />}
+        icon={<Calendar size={13} />}
         label={posted}
         variant="outlined"
-        sx={{
-          height: 28,
-          borderColor: "divider",
-          "& .MuiChip-label": { fontSize: "0.75rem", px: 1.1 },
-        }}
+        sx={metaChipSx}
       />
 
       <Chip
         size="small"
-        icon={<Eye size={14} />}
+        icon={<Eye size={13} />}
         label={`${formatCount(meme.downloadCount)} downloads`}
         variant="outlined"
-        sx={{
-          height: 28,
-          borderColor: "divider",
-          "& .MuiChip-label": { fontSize: "0.75rem", px: 1.1 },
-        }}
+        sx={metaChipSx}
       />
 
       <Chip
         size="small"
-        icon={<ThumbsUp size={14} />}
+        icon={<ThumbsUp size={13} />}
         label={`${formatCount(meme.likeCount)} likes`}
         variant="outlined"
-        sx={{
-          height: 28,
-          borderColor: "divider",
-          "& .MuiChip-label": { fontSize: "0.75rem", px: 1.1 },
-        }}
+        sx={metaChipSx}
       />
 
       <Chip
         size="small"
-        icon={<Share2 size={14} />}
+        icon={<Share2 size={13} />}
         label={`${formatCount(meme.shareCount)} shares`}
         variant="outlined"
-        sx={{
-          height: 28,
-          borderColor: "divider",
-          "& .MuiChip-label": { fontSize: "0.75rem", px: 1.1 },
-        }}
+        sx={metaChipSx}
       />
     </Stack>
   );
@@ -457,7 +449,7 @@ function MemeDetailContent({
             fontWeight: 700,
             lineHeight: 1.2,
             fontSize: { xs: "1.05rem", sm: "1.18rem", md: "1.32rem" },
-            mb: { xs: 1.5, md: 2 },
+            mb: { xs: 1.75, md: 2.25 },
           }}
         >
           {meme.title}
@@ -573,6 +565,11 @@ export default function ImageViewerPage() {
                 border: `1px solid ${theme.palette.action.hover}`,
                 boxShadow: theme.palette.customShadows.container,
                 overflow: "hidden",
+                "@keyframes fadeSlideIn": {
+                  from: { opacity: 0, transform: "translateY(-8px)" },
+                  to: { opacity: 1, transform: "translateY(0)" },
+                },
+                animation: "fadeSlideIn 0.35s ease-out",
               })}
             >
               <MemeDetailContent
