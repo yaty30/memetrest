@@ -18,6 +18,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../providers/AuthProvider";
 import { signOut } from "../../services/authService";
 import SignInDialog from "../SignInDialog";
@@ -31,6 +32,7 @@ const MENU_ITEMS = [
 
 export default function UserMenu() {
   const { firebaseUser, userProfile, loading } = useAuth();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [signInOpen, setSignInOpen] = useState(false);
   const open = Boolean(anchorEl);
@@ -39,6 +41,8 @@ export default function UserMenu() {
     setAnchorEl(null);
     if (label === "Logout") {
       await signOut();
+    } else if (label === "Profile") {
+      navigate("/profile");
     }
   };
 
@@ -75,7 +79,7 @@ export default function UserMenu() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-  const photoURL = userProfile?.photoURL || firebaseUser?.photoURL || null;
+  const photoURL = userProfile?.avatar?.url || firebaseUser?.photoURL || null;
 
   return (
     <>
