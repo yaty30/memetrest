@@ -4,21 +4,32 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { User as FirebaseUser } from "firebase/auth";
-import type { UserProfile } from "../types/user";
 import { onAuthChange } from "../services/authService";
-import { upsertUserProfile } from "../services/userService";
+import {
+  getUserProfile,
+  subscribeToUserProfile,
+  upsertUserProfile,
+} from "../services/userService";
+import { useAppDispatch } from "../store/hooks";
+import {
+  clearCurrentUserProfile,
+  profileHydrated,
+  profileHydrationFailed,
+  profileHydrationStarted,
+  profileMissing,
+} from "../store/currentUserProfileSlice";
+import type { Unsubscribe } from "firebase/firestore";
 
 interface AuthContextValue {
   /** Firebase Auth user — null when signed out, undefined while loading. */
   firebaseUser: FirebaseUser | null | undefined;
-  /** Firestore user profile — null when signed out or not yet loaded. */
-  userProfile: UserProfile | null;
-  /** True while auth state is being determined on mount. */
+  /** True while auth and current-user profile hydration are in progress. */
   loading: boolean;
-  /** Force-refresh the Firestore profile (e.g. after admin changes). */
+  /** Force-refresh the current profile document. */
   refreshProfile: () => Promise<void>;
 }
 
@@ -32,42 +43,113 @@ export function useAuth(): AuthContextValue {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const dispatch = useAppDispatch();
   const [firebaseUser, setFirebaseUser] = useState<
     FirebaseUser | null | undefined
   >(undefined);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileUnsubscribeRef = useRef<Unsubscribe | null>(null);
+  const authEventIdRef = useRef(0);
 
-  // Listen to Firebase Auth state
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        try {
-          const profile = await upsertUserProfile(user);
-          setUserProfile(profile);
-        } catch (err) {
-          console.error("Failed to upsert user profile:", err);
-          setUserProfile(null);
-        }
-      } else {
-        setUserProfile(null);
+    const stopActiveProfileSubscription = () => {
+      if (profileUnsubscribeRef.current) {
+        profileUnsubscribeRef.current();
+        profileUnsubscribeRef.current = null;
       }
-      setLoading(false);
+    };
+
+    const unsubscribe = onAuthChange(async (user) => {
+      const authEventId = ++authEventIdRef.current;
+      stopActiveProfileSubscription();
+      setFirebaseUser(user);
+
+      if (!user) {
+        dispatch(clearCurrentUserProfile());
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      dispatch(profileHydrationStarted(user.uid));
+
+      try {
+        await upsertUserProfile(user);
+
+        if (authEventId !== authEventIdRef.current) return;
+
+        profileUnsubscribeRef.current = subscribeToUserProfile(
+          user.uid,
+          (profile) => {
+            if (authEventId !== authEventIdRef.current) return;
+
+            if (!profile) {
+              dispatch(profileMissing(user.uid));
+              setLoading(false);
+              return;
+            }
+
+            dispatch(profileHydrated({ uid: user.uid, profile }));
+            setLoading(false);
+          },
+          (err) => {
+            if (authEventId !== authEventIdRef.current) return;
+            dispatch(
+              profileHydrationFailed({
+                uid: user.uid,
+                error: err.message || "Failed to subscribe to profile",
+              }),
+            );
+            setLoading(false);
+          },
+        );
+      } catch (err) {
+        if (authEventId !== authEventIdRef.current) return;
+        console.error("Failed to hydrate current user profile:", err);
+        dispatch(
+          profileHydrationFailed({
+            uid: user.uid,
+            error:
+              err instanceof Error ? err.message : "Failed to hydrate profile",
+          }),
+        );
+        setLoading(false);
+      }
     });
-    return unsubscribe;
-  }, []);
+
+    return () => {
+      ++authEventIdRef.current;
+      stopActiveProfileSubscription();
+      unsubscribe();
+    };
+  }, [dispatch]);
 
   const refreshProfile = useCallback(async () => {
-    if (firebaseUser) {
-      const profile = await upsertUserProfile(firebaseUser);
-      setUserProfile(profile);
+    if (!firebaseUser) return;
+
+    dispatch(profileHydrationStarted(firebaseUser.uid));
+    try {
+      await upsertUserProfile(firebaseUser);
+      const profile = await getUserProfile(firebaseUser.uid);
+      if (profile) {
+        dispatch(profileHydrated({ uid: firebaseUser.uid, profile }));
+      } else {
+        dispatch(profileMissing(firebaseUser.uid));
+      }
+    } catch (err) {
+      dispatch(
+        profileHydrationFailed({
+          uid: firebaseUser.uid,
+          error:
+            err instanceof Error ? err.message : "Failed to refresh profile",
+        }),
+      );
     }
-  }, [firebaseUser]);
+  }, [dispatch, firebaseUser]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ firebaseUser, userProfile, loading, refreshProfile }),
-    [firebaseUser, userProfile, loading, refreshProfile],
+    () => ({ firebaseUser, loading, refreshProfile }),
+    [firebaseUser, loading, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
