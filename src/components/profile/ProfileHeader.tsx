@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Box } from "@mui/material";
 import type { UserProfile } from "../../types/user";
-import { useAuth } from "../../providers/AuthProvider";
 import AssetPickerDialog from "./AssetPickerDialog";
 import EditProfileDialog from "./EditProfileDialog";
 import ProfileHeaderBanner from "./ProfileHeaderBanner";
@@ -27,7 +26,6 @@ export default function ProfileHeader({
   const [editOpen, setEditOpen] = useState(false);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [bannerPickerOpen, setBannerPickerOpen] = useState(false);
-  const { refreshProfile } = useAuth();
 
   if (loading) return <ProfileHeaderSkeleton />;
 
@@ -75,21 +73,18 @@ export default function ProfileHeader({
             open={editOpen}
             onClose={() => setEditOpen(false)}
             profile={profile}
-            onSaved={refreshProfile}
           />
           <AssetPickerDialog
             open={avatarPickerOpen}
             onClose={() => setAvatarPickerOpen(false)}
             profile={profile}
             kind="avatar"
-            onSaved={refreshProfile}
           />
           <AssetPickerDialog
             open={bannerPickerOpen}
             onClose={() => setBannerPickerOpen(false)}
             profile={profile}
             kind="banner"
-            onSaved={refreshProfile}
           />
         </>
       )}
