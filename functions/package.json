@@ -1,0 +1,19 @@
+{
+  "name": "memetrest-functions",
+  "private": true,
+  "main": "lib/functions/src/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.7.0",
+    "firebase-functions": "^6.0.1",
+    "memetrest": "file:.."
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
