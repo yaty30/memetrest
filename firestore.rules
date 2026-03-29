@@ -28,6 +28,15 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
     }
 
+    function isUploadAssetPublic(assetData) {
+      return assetData.status == 'published' && assetData.visibility == 'public';
+    }
+
+    function isUploadAssetOwner(assetId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/assets/$(assetId)).data.ownerId == request.auth.uid;
+    }
+
     // ── users/{uid} ───────────────────────────────────────────────────
     // Anyone can read profiles. Only the owner can create/update their
     // own doc (except role/status, which only admins can change).
@@ -42,7 +51,9 @@ service cloud.firestore {
       // Owner can update non-privileged fields (role and status must stay the same)
       allow update: if isOwner(uid)
         && request.resource.data.role == resource.data.role
-        && request.resource.data.status == resource.data.status;
+        && request.resource.data.status == resource.data.status
+        // Upload enforcement fields are backend-authoritative in this phase.
+        && request.resource.data.uploadProfile == resource.data.uploadProfile;
 
       // Admin can change any field (including role/status)
       allow update: if isAdmin();
@@ -97,6 +108,26 @@ service cloud.firestore {
       allow update: if isModerator();
 
       allow delete: if isAdmin();
+    }
+
+    // ── assets/{assetId} ───────────────────────────────────────────────
+    // Upload-domain canonical asset docs are backend-authoritative in this phase.
+    match /assets/{assetId} {
+      // Canonical visibility rule: published + public only.
+      // Private docs are owner/moderator only.
+      allow read: if isUploadAssetPublic(resource.data)
+        || isUploadAssetOwner(assetId)
+        || isModerator();
+
+      // Client writes are blocked; backend handlers (Admin SDK) own mutations.
+      allow create, update, delete: if false;
+
+      // ── assets/{assetId}/events/{eventId} ───────────────────────────
+      // Event history is backend-authored and immutable from clients.
+      match /events/{eventId} {
+        allow read: if isUploadAssetOwner(assetId) || isModerator();
+        allow create, update, delete: if false;
+      }
     }
   }
 }
