@@ -1,8 +1,0 @@
-.image-viewer-page {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  background: var(--mt-gradient-viewer);
-  background-size: 600% 600%;
-  animation: bg 10s ease infinite;
-}

@@ -1,9 +1,12 @@
 import {
   doc,
   getDoc,
+  onSnapshot,
   setDoc,
   updateDoc,
   serverTimestamp,
+  type FirestoreError,
+  type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import type { UserProfile, ProfileAssetRef } from "../types/user";
@@ -71,6 +74,25 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, USERS_COL, uid));
   if (!snap.exists()) return null;
   return mapUserDoc(snap.data());
+}
+
+/** Subscribe to a user profile document and receive live updates. */
+export function subscribeToUserProfile(
+  uid: string,
+  onProfile: (profile: UserProfile | null) => void,
+  onError?: (error: FirestoreError) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, USERS_COL, uid),
+    (snap) => {
+      if (!snap.exists()) {
+        onProfile(null);
+        return;
+      }
+      onProfile(mapUserDoc(snap.data()));
+    },
+    onError,
+  );
 }
 
 /** Look up a user profile by username via the usernames collection. */

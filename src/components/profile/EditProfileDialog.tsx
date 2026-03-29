@@ -6,7 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  Box,
   Typography,
   IconButton,
   Alert,
@@ -23,12 +22,14 @@ import {
   BIO_MAX_LINE_BREAKS,
 } from "../../types/user";
 import { updateProfile } from "../../services/profileService";
+import { useAppDispatch } from "../../store/hooks";
+import { patchCurrentUserProfile } from "../../store/currentUserProfileSlice";
 
 interface EditProfileDialogProps {
   open: boolean;
   onClose: () => void;
   profile: UserProfile;
-  onSaved: () => void;
+  onSaved?: () => void;
 }
 
 export default function EditProfileDialog({
@@ -37,6 +38,7 @@ export default function EditProfileDialog({
   profile,
   onSaved,
 }: EditProfileDialogProps) {
+  const dispatch = useAppDispatch();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -73,18 +75,33 @@ export default function EditProfileDialog({
     setError(null);
 
     try {
+      const nextDisplayName = displayName.trim();
+      const nextBio = bio.trim();
+
       await updateProfile(profile.uid, {
-        displayName: displayName.trim(),
-        bio: bio.trim(),
+        displayName: nextDisplayName,
+        bio: nextBio,
       });
-      onSaved();
+
+      dispatch(
+        patchCurrentUserProfile({
+          uid: profile.uid,
+          patch: {
+            displayName: nextDisplayName,
+            bio: nextBio,
+            profileUpdatedAt: new Date(),
+          },
+        }),
+      );
+
+      onSaved?.();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setSaving(false);
     }
-  }, [profile.uid, displayName, bio, onSaved, onClose]);
+  }, [profile.uid, displayName, bio, dispatch, onSaved, onClose, canSave]);
 
   return (
     <Dialog

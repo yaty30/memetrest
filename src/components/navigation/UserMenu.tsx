@@ -20,6 +20,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../providers/AuthProvider";
+import { useAppSelector } from "../../store/hooks";
 import { signOut } from "../../services/authService";
 import SignInDialog from "../SignInDialog";
 
@@ -31,7 +32,10 @@ const MENU_ITEMS = [
 ] as const;
 
 export default function UserMenu() {
-  const { firebaseUser, userProfile, loading } = useAuth();
+  const { firebaseUser, loading } = useAuth();
+  const userProfile = useAppSelector(
+    (state) => state.currentUserProfile.profile,
+  );
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [signInOpen, setSignInOpen] = useState(false);

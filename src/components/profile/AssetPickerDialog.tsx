@@ -22,6 +22,8 @@ import type {
 } from "../../types/user";
 import { updateProfile } from "../../services/profileService";
 import { usePresetAssets } from "../../hooks/usePresetAssets";
+import { useAppDispatch } from "../../store/hooks";
+import { patchCurrentUserProfile } from "../../store/currentUserProfileSlice";
 import AssetPicker from "./AssetPicker";
 
 interface AssetPickerDialogProps {
@@ -29,7 +31,7 @@ interface AssetPickerDialogProps {
   onClose: () => void;
   profile: UserProfile;
   kind: ProfileAssetKind;
-  onSaved: () => void;
+  onSaved?: () => void;
 }
 
 function toAssetRef(asset: ProfileAsset): ProfileAssetRef {
@@ -53,6 +55,7 @@ export default function AssetPickerDialog({
   kind,
   onSaved,
 }: AssetPickerDialogProps) {
+  const dispatch = useAppDispatch();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -76,14 +79,34 @@ export default function AssetPickerDialog({
 
     try {
       await updateProfile(profile.uid, { [kind]: selected });
-      onSaved();
+
+      dispatch(
+        patchCurrentUserProfile({
+          uid: profile.uid,
+          patch: {
+            [kind]: selected,
+            profileUpdatedAt: new Date(),
+          },
+        }),
+      );
+
+      onSaved?.();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }
-  }, [hasChanged, saving, profile.uid, kind, selected, onSaved, onClose]);
+  }, [
+    hasChanged,
+    saving,
+    profile.uid,
+    kind,
+    selected,
+    dispatch,
+    onSaved,
+    onClose,
+  ]);
 
   return (
     <Dialog

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import type { UserProfile } from "../types/user";
 import { getUserByUsername } from "../services/userService";
+import { useAppSelector } from "../store/hooks";
 
 interface ProfileData {
   profile: UserProfile | null;
@@ -17,7 +18,9 @@ interface ProfileData {
  * - Other username → fetches from Firestore via the usernames collection.
  */
 export function useProfileData(username?: string): ProfileData {
-  const { userProfile, loading: authLoading } = useAuth();
+  const { firebaseUser, loading: authLoading } = useAuth();
+  const { profile: currentUserProfile, status: currentProfileStatus } =
+    useAppSelector((state) => state.currentUserProfile);
   const [fetchedProfile, setFetchedProfile] = useState<UserProfile | null>(
     null,
   );
@@ -25,12 +28,23 @@ export function useProfileData(username?: string): ProfileData {
   const [notFound, setNotFound] = useState(false);
 
   const isOwnProfile =
-    !username || (!!userProfile?.username && userProfile.username === username);
+    !username ||
+    (!!currentUserProfile?.username &&
+      currentUserProfile.username === username);
+
+  const awaitingOwnProfileResolution =
+    !!username &&
+    !!firebaseUser &&
+    !isOwnProfile &&
+    (authLoading ||
+      currentProfileStatus === "loading" ||
+      currentProfileStatus === "idle");
 
   useEffect(() => {
-    if (!username || isOwnProfile) return;
+    if (!username || isOwnProfile || awaitingOwnProfileResolution) return;
 
     let cancelled = false;
+    setFetchedProfile(null);
     setFetchLoading(true);
     setNotFound(false);
 
@@ -54,13 +68,34 @@ export function useProfileData(username?: string): ProfileData {
     return () => {
       cancelled = true;
     };
-  }, [username, isOwnProfile]);
+  }, [username, isOwnProfile, awaitingOwnProfileResolution]);
 
   if (!username || isOwnProfile) {
+    // If the profile is already hydrated in Redux, return it immediately
+    // without waiting for auth to re-settle. Banner, avatar, name, bio etc.
+    // are already cached — no need to block the view with a spinner.
+    const profileReady =
+      currentProfileStatus === "ready" && !!currentUserProfile;
+    const currentUserLoading = profileReady
+      ? false
+      : authLoading ||
+        (!!firebaseUser &&
+          (currentProfileStatus === "loading" ||
+            currentProfileStatus === "idle"));
+
     return {
-      profile: userProfile,
-      loading: authLoading,
+      profile: currentUserProfile,
+      loading: currentUserLoading,
       isOwnProfile: true,
+      notFound: false,
+    };
+  }
+
+  if (awaitingOwnProfileResolution) {
+    return {
+      profile: null,
+      loading: true,
+      isOwnProfile: false,
       notFound: false,
     };
   }
