@@ -9,10 +9,10 @@ import {
 import UploadAssetCard from "../components/UploadAssetCard";
 import "../components/UploadAssetCard.css";
 import { submitAssetForReview } from "../services/uploadPipelineService";
-import type { UserUploadAssetListItem } from "../services/uploadPipelineService";
+import type { UploadAssetDoc } from "../types/upload";
 
 interface MyUploadsViewProps {
-  items: UserUploadAssetListItem[];
+  items: UploadAssetDoc[];
   loading: boolean;
   error: string | null;
 }
@@ -93,7 +93,21 @@ export default function MyUploadsView({
           {items.map((item) => (
             <UploadAssetCard
               key={item.id}
-              item={item}
+              item={{
+                id: item.id,
+                title: item.title,
+                status: item.status,
+                visibility: item.visibility,
+                createdAt: item.createdAt,
+                mimeType: item.mimeType,
+                dimensions: {
+                  width: item.dimensions.width,
+                  height: item.dimensions.height,
+                },
+                previewUrl: item.urls.previewUrl,
+                thumbnailUrl: item.urls.thumbnailUrl,
+                originalUrl: item.urls.originalUrl,
+              }}
               submitting={Boolean(submittingById[item.id])}
               onSubmitForReview={handleSubmitForReview}
             />

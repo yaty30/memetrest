@@ -3,7 +3,7 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import AppNavbar from "../components/navigation/AppNavbar";
-import { useMyUploadAssets } from "../hooks/useMyUploadAssets";
+import { useUserUploads } from "../hooks/useUserUploads";
 import { useAuth } from "../providers/AuthProvider";
 import MyUploadsView from "../views/MyUploadsView";
 import {
@@ -17,7 +17,9 @@ import {
 export default function MyUploadsPage() {
   const navigate = useNavigate();
   const { firebaseUser, loading: authLoading } = useAuth();
-  const { items, loading, error } = useMyUploadAssets();
+  const { uploads, loading, error } = useUserUploads(firebaseUser?.uid, {
+    visibility: "owner",
+  });
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -177,7 +179,7 @@ export default function MyUploadsPage() {
               </Typography>
 
               <MyUploadsView
-                items={items}
+                items={uploads}
                 loading={authLoading || loading}
                 error={error}
               />
