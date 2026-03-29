@@ -11,6 +11,9 @@ import ProfileHeaderSkeleton from "./ProfileHeaderSkeleton";
 interface ProfileHeaderProps {
   profile: UserProfile;
   isOwnProfile: boolean;
+  uploadCount: number;
+  uploadCountLoading: boolean;
+  uploadCountError: string | null;
   loading?: boolean;
   onBack?: () => void;
 }
@@ -18,6 +21,9 @@ interface ProfileHeaderProps {
 export default function ProfileHeader({
   profile,
   isOwnProfile,
+  uploadCount,
+  uploadCountLoading,
+  uploadCountError,
   loading,
   onBack,
 }: ProfileHeaderProps) {
@@ -53,6 +59,9 @@ export default function ProfileHeader({
 
       <ProfileHeaderBar
         profile={profile}
+        uploadCount={uploadCount}
+        uploadCountLoading={uploadCountLoading}
+        uploadCountError={uploadCountError}
         name={name}
         initials={initials}
         isOwnProfile={isOwnProfile}
