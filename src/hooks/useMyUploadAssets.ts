@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
-import type { UserUploadAssetListItem } from "../services/uploadPipelineService";
+import {
+  mapUploadAssetToCardModel,
+  type UploadCardModel,
+} from "../services/uploadCardMapper";
 import { useUserUploads } from "./useUserUploads";
 
 interface UseMyUploadAssetsResult {
-  items: UserUploadAssetListItem[];
+  items: UploadCardModel[];
   loading: boolean;
   error: string | null;
 }
@@ -18,25 +22,38 @@ export function useMyUploadAssets(): UseMyUploadAssetsResult {
     visibility: "owner",
   });
 
-  const items: UserUploadAssetListItem[] = uploads.map((upload) => ({
-    id: upload.id,
-    title: upload.title,
-    status: upload.status,
-    visibility: upload.visibility,
-    createdAt: upload.createdAt,
-    mimeType: upload.mimeType,
-    dimensions: {
-      width: upload.dimensions.width,
-      height: upload.dimensions.height,
-    },
-    previewUrl: upload.urls.previewUrl,
-    thumbnailUrl: upload.urls.thumbnailUrl,
-    originalUrl: upload.urls.originalUrl,
-  }));
+  const [items, setItems] = useState<UploadCardModel[]>([]);
+  const [resolvingPreviews, setResolvingPreviews] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setResolvingPreviews(true);
+
+    void Promise.all(uploads.map((upload) => mapUploadAssetToCardModel(upload)))
+      .then((mapped) => {
+        if (active) {
+          setItems(mapped);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setItems([]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setResolvingPreviews(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [uploads]);
 
   return {
     items,
-    loading: authLoading || uploadsLoading,
+    loading: authLoading || uploadsLoading || resolvingPreviews,
     error,
   };
 }

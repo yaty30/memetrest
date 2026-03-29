@@ -1,9 +1,10 @@
-import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
-import type { UserUploadAssetListItem } from "../services/uploadPipelineService";
+import { useEffect, useState } from "react";
+import type { UploadCardModel } from "../services/uploadCardMapper";
 import "./UploadAssetCard.css";
+import { CircularProgress } from "@mui/material";
 
 interface UploadAssetCardProps {
-  item: UserUploadAssetListItem;
+  item: UploadCardModel;
   submitting: boolean;
   onSubmitForReview: (assetId: string) => void;
 }
@@ -38,34 +39,56 @@ export default function UploadAssetCard({
   submitting,
   onSubmitForReview,
 }: UploadAssetCardProps) {
-  const preview = item.thumbnailUrl ?? item.previewUrl ?? item.originalUrl;
-  const isReviewable = item.status === "uploaded";
-  const hint = workflowHint(item.status, item.visibility);
-  const hasDimensions = item.dimensions.width > 0 && item.dimensions.height > 0;
+  const [previewLoaded, setPreviewLoaded] = useState(false);
+  const [previewLoadFailed, setPreviewLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setPreviewLoaded(false);
+    setPreviewLoadFailed(false);
+  }, [item.id, item.previewUrl]);
+
+  const preview = item.previewUrl;
+  const showPreview = Boolean(preview) && previewLoaded && !previewLoadFailed;
+  const isReviewable = item.reviewStatus === "uploaded";
+  const hint = workflowHint(item.reviewStatus, item.visibility);
+  const hasDimensions = item.width > 0 && item.height > 0;
 
   return (
     <article className="upload-card">
       {/* ─── Preview ─── */}
       <div className="upload-card__preview">
-        {preview ? (
+        {preview && (
           <img
             className="upload-card__preview-img"
-            src={preview}
+            src={preview ?? undefined}
+            style={{
+              userSelect: "none",
+              opacity: showPreview ? 1 : 0,
+              transition: "opacity 180ms ease",
+            }}
+            draggable={false}
             alt={item.title || "Upload preview"}
             loading="lazy"
+            onLoad={() => setPreviewLoaded(true)}
+            onError={() => {
+              setPreviewLoaded(false);
+              setPreviewLoadFailed(true);
+            }}
           />
-        ) : (
+        )}
+
+        {!showPreview && (
           <div className="upload-card__preview-placeholder">
-            <UploadFileOutlinedIcon sx={{ fontSize: 48 }} />
+            <CircularProgress size={28} thickness={4.5} />
           </div>
         )}
 
         {/* ─── Status & visibility badges ─── */}
         <div className="upload-card__badges">
           <span
-            className={`upload-card__badge upload-card__badge--${item.status}`}
+            className={`upload-card__badge upload-card__badge--${item.reviewStatus}`}
           >
-            {toLabel(item.status)}
+            {toLabel(item.reviewStatus)}
           </span>
           <span
             className={`upload-card__badge upload-card__badge--${item.visibility}`}
@@ -87,7 +110,7 @@ export default function UploadAssetCard({
             <>
               <span className="upload-card__meta-sep" />
               <span>
-                {item.dimensions.width}×{item.dimensions.height}
+                {item.width}×{item.height}
               </span>
             </>
           )}

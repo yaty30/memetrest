@@ -231,6 +231,14 @@ function mapUploadAssetDoc(
     typeof data.processing === "object" && data.processing !== null
       ? (data.processing as Record<string, unknown>)
       : {};
+  const mediaRaw =
+    typeof data.media === "object" && data.media !== null
+      ? (data.media as Record<string, unknown>)
+      : {};
+  const fileRaw =
+    typeof data.file === "object" && data.file !== null
+      ? (data.file as Record<string, unknown>)
+      : {};
   const metricsRaw =
     typeof data.metrics === "object" && data.metrics !== null
       ? (data.metrics as Record<string, unknown>)
@@ -243,6 +251,18 @@ function mapUploadAssetDoc(
     typeof data.urls === "object" && data.urls !== null
       ? (data.urls as Record<string, unknown>)
       : {};
+  const topLevelStoragePath =
+    asString(data.storagePath, "") ||
+    asString(data.finalPath, "") ||
+    asString(data.quarantinePath, "");
+  const topLevelPreviewPath = asString(data.previewPath, "");
+  const topLevelThumbnailPath = asString(data.thumbnailPath, "");
+  const topLevelPreviewUrl = asString(data.previewUrl, "");
+  const topLevelThumbnailUrl = asString(data.thumbnailUrl, "");
+  const topLevelDownloadUrl =
+    asString(data.downloadURL, "") || asString(data.downloadUrl, "");
+  const mediaUrl = asString(mediaRaw.url, "");
+  const fileUrl = asString(fileRaw.url, "");
 
   return {
     id,
@@ -267,14 +287,23 @@ function mapUploadAssetDoc(
       aspectRatio: asNumber(dimensions.aspectRatio),
     },
     storage: {
-      originalPath: asString(storageRaw.originalPath, ""),
-      previewPath: asString(storageRaw.previewPath, "") || null,
-      thumbnailPath: asString(storageRaw.thumbnailPath, "") || null,
+      originalPath:
+        asString(storageRaw.originalPath, "") || topLevelStoragePath,
+      previewPath:
+        asString(storageRaw.previewPath, "") || topLevelPreviewPath || null,
+      thumbnailPath:
+        asString(storageRaw.thumbnailPath, "") || topLevelThumbnailPath || null,
     },
     urls: {
-      originalUrl: asString(urls.originalUrl, "") || null,
-      previewUrl: asString(urls.previewUrl, "") || null,
-      thumbnailUrl: asString(urls.thumbnailUrl, "") || null,
+      originalUrl:
+        asString(urls.originalUrl, "") ||
+        topLevelDownloadUrl ||
+        mediaUrl ||
+        fileUrl ||
+        null,
+      previewUrl: asString(urls.previewUrl, "") || topLevelPreviewUrl || null,
+      thumbnailUrl:
+        asString(urls.thumbnailUrl, "") || topLevelThumbnailUrl || null,
     },
     source: {
       sourceType: (asString(sourceRaw.sourceType, "upload") ||
