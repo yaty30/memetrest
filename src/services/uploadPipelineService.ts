@@ -12,7 +12,11 @@ import {
 } from "firebase/firestore";
 import { functionsClient, storage } from "../../firebase";
 import { db } from "../../firebase";
-import type { UploadAssetStatus, UploadAssetVisibility } from "../types/upload";
+import type {
+  UploadAssetDoc,
+  UploadAssetStatus,
+  UploadAssetVisibility,
+} from "../types/upload";
 
 interface InitializeUploadRequest {
   mimeType: string;
@@ -91,6 +95,13 @@ export interface UserUploadAssetListItem {
   previewUrl: string | null;
   thumbnailUrl: string | null;
   originalUrl: string | null;
+}
+
+export type UserUploadsVisibility = "owner" | "public";
+
+interface UserUploadsQueryOptions {
+  visibility?: UserUploadsVisibility;
+  pageSize?: number;
 }
 
 type TimestampLike = {
@@ -177,12 +188,53 @@ function asNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function mapUserUploadAsset(
+function mapUserUploadAsset(asset: UploadAssetDoc): UserUploadAssetListItem {
+  return {
+    id: asset.id,
+    title: asset.title,
+    status: asset.status,
+    visibility: asset.visibility,
+    createdAt: asset.createdAt,
+    mimeType: asset.mimeType,
+    dimensions: {
+      width: asset.dimensions.width,
+      height: asset.dimensions.height,
+    },
+    previewUrl: asset.urls.previewUrl,
+    thumbnailUrl: asset.urls.thumbnailUrl,
+    originalUrl: asset.urls.originalUrl,
+  };
+}
+
+function mapUploadAssetDoc(
   id: string,
   data: Record<string, unknown>,
-): UserUploadAssetListItem {
+): UploadAssetDoc {
   const now = Date.now();
   const title = asString(data.title, "").trim();
+  const ownerId = asString(data.ownerId, "");
+  const descriptionRaw = data.description;
+  const tagsRaw = Array.isArray(data.tags) ? data.tags : [];
+  const storageRaw =
+    typeof data.storage === "object" && data.storage !== null
+      ? (data.storage as Record<string, unknown>)
+      : {};
+  const sourceRaw =
+    typeof data.source === "object" && data.source !== null
+      ? (data.source as Record<string, unknown>)
+      : {};
+  const moderationRaw =
+    typeof data.moderation === "object" && data.moderation !== null
+      ? (data.moderation as Record<string, unknown>)
+      : {};
+  const processingRaw =
+    typeof data.processing === "object" && data.processing !== null
+      ? (data.processing as Record<string, unknown>)
+      : {};
+  const metricsRaw =
+    typeof data.metrics === "object" && data.metrics !== null
+      ? (data.metrics as Record<string, unknown>)
+      : {};
   const dimensions =
     typeof data.dimensions === "object" && data.dimensions !== null
       ? (data.dimensions as Record<string, unknown>)
@@ -194,40 +246,156 @@ function mapUserUploadAsset(
 
   return {
     id,
+    ownerId,
+    ownerRoleAtUpload: (asString(data.ownerRoleAtUpload, "") ||
+      null) as UploadAssetDoc["ownerRoleAtUpload"],
+    kind: (asString(data.kind, "image") || "image") as UploadAssetDoc["kind"],
     title,
+    description:
+      descriptionRaw == null ? null : asString(descriptionRaw, null as never),
+    tags: tagsRaw
+      .map((tag) => asString(tag, "").trim())
+      .filter((tag) => tag.length > 0),
     status: asString(data.status, "uploaded") as UploadAssetStatus,
     visibility: asString(data.visibility, "private") as UploadAssetVisibility,
-    createdAt: toMillis(data.createdAt, now),
     mimeType: asString(data.mimeType, "unknown"),
+    fileSize: asNumber(data.fileSize),
+    isAnimated: Boolean(data.isAnimated),
     dimensions: {
       width: asNumber(dimensions.width),
       height: asNumber(dimensions.height),
+      aspectRatio: asNumber(dimensions.aspectRatio),
     },
-    previewUrl: asString(urls.previewUrl, "") || null,
-    thumbnailUrl: asString(urls.thumbnailUrl, "") || null,
-    originalUrl: asString(urls.originalUrl, "") || null,
+    storage: {
+      originalPath: asString(storageRaw.originalPath, ""),
+      previewPath: asString(storageRaw.previewPath, "") || null,
+      thumbnailPath: asString(storageRaw.thumbnailPath, "") || null,
+    },
+    urls: {
+      originalUrl: asString(urls.originalUrl, "") || null,
+      previewUrl: asString(urls.previewUrl, "") || null,
+      thumbnailUrl: asString(urls.thumbnailUrl, "") || null,
+    },
+    source: {
+      sourceType: (asString(sourceRaw.sourceType, "upload") ||
+        "upload") as UploadAssetDoc["source"]["sourceType"],
+      sourceUrl: asString(sourceRaw.sourceUrl, "") || null,
+      attributionText: asString(sourceRaw.attributionText, "") || null,
+    },
+    moderation: {
+      userSensitiveFlag: Boolean(moderationRaw.userSensitiveFlag),
+      scanState: (asString(moderationRaw.scanState, "not_requested") ||
+        "not_requested") as UploadAssetDoc["moderation"]["scanState"],
+      scanResult: (asString(moderationRaw.scanResult, "unknown") ||
+        "unknown") as UploadAssetDoc["moderation"]["scanResult"],
+      finalDecision: (asString(moderationRaw.finalDecision, "pending") ||
+        "pending") as UploadAssetDoc["moderation"]["finalDecision"],
+      rejectionReasonCode: (asString(moderationRaw.rejectionReasonCode, "") ||
+        null) as UploadAssetDoc["moderation"]["rejectionReasonCode"],
+      rejectionReasonText:
+        asString(moderationRaw.rejectionReasonText, "") || null,
+      reviewedBy: asString(moderationRaw.reviewedBy, "") || null,
+      reviewedAt: toMillis(moderationRaw.reviewedAt, now),
+    },
+    processing: {
+      metadataState: (asString(processingRaw.metadataState, "pending") ||
+        "pending") as UploadAssetDoc["processing"]["metadataState"],
+      derivativeState: (asString(processingRaw.derivativeState, "pending") ||
+        "pending") as UploadAssetDoc["processing"]["derivativeState"],
+      hashState: (asString(processingRaw.hashState, "pending") ||
+        "pending") as UploadAssetDoc["processing"]["hashState"],
+      failedReason: asString(processingRaw.failedReason, "") || null,
+      uploadCompletedAt: toMillis(processingRaw.uploadCompletedAt, now),
+      metadataExtractedAt: toMillis(processingRaw.metadataExtractedAt, now),
+      derivativesGeneratedAt: toMillis(
+        processingRaw.derivativesGeneratedAt,
+        now,
+      ),
+    },
+    metrics: {
+      views: asNumber(metricsRaw.views),
+      favorites: asNumber(metricsRaw.favorites),
+      shares: asNumber(metricsRaw.shares),
+      comments: asNumber(metricsRaw.comments),
+    },
+    fileHash: asString(data.fileHash, "") || null,
+    createdAt: toMillis(data.createdAt, now),
+    updatedAt: toMillis(data.updatedAt, now),
+    publishedAt: toMillis(data.publishedAt, now),
+    removedAt: toMillis(data.removedAt, now),
   };
 }
 
-export function subscribeToUserUploadAssets(
+function asNullableMillis(value: unknown): number | null {
+  if (value == null) return null;
+  return toMillis(value, Date.now());
+}
+
+function toUploadAssetDoc(
+  id: string,
+  data: Record<string, unknown>,
+): UploadAssetDoc {
+  const now = Date.now();
+  const parsed = mapUploadAssetDoc(id, data);
+
+  return {
+    ...parsed,
+    description: parsed.description,
+    publishedAt: asNullableMillis(data.publishedAt),
+    removedAt: asNullableMillis(data.removedAt),
+    moderation: {
+      ...parsed.moderation,
+      reviewedAt: asNullableMillis(
+        (data.moderation as Record<string, unknown> | undefined)?.reviewedAt,
+      ),
+    },
+    processing: {
+      ...parsed.processing,
+      uploadCompletedAt: asNullableMillis(
+        (data.processing as Record<string, unknown> | undefined)
+          ?.uploadCompletedAt,
+      ),
+      metadataExtractedAt: asNullableMillis(
+        (data.processing as Record<string, unknown> | undefined)
+          ?.metadataExtractedAt,
+      ),
+      derivativesGeneratedAt: asNullableMillis(
+        (data.processing as Record<string, unknown> | undefined)
+          ?.derivativesGeneratedAt,
+      ),
+    },
+    createdAt: toMillis(data.createdAt, now),
+    updatedAt: toMillis(data.updatedAt, now),
+  };
+}
+
+export function subscribeToUserUploads(
   ownerId: string,
-  onData: (items: UserUploadAssetListItem[]) => void,
+  onData: (items: UploadAssetDoc[]) => void,
   onError?: (error: Error) => void,
+  options: UserUploadsQueryOptions = {},
 ): Unsubscribe {
+  const { visibility = "owner", pageSize = 100 } = options;
   const assetsRef = collection(db, "assets");
-  const ownerAssetsQuery = query(
-    assetsRef,
+  const constraints = [
     where("ownerId", "==", ownerId),
     orderBy("createdAt", "desc"),
-    limit(100),
-  );
+    limit(pageSize),
+  ];
+
+  if (visibility === "public") {
+    constraints.unshift(where("status", "==", "published"));
+    constraints.unshift(where("visibility", "==", "public"));
+  }
+
+  const ownerAssetsQuery = query(assetsRef, ...constraints);
 
   return onSnapshot(
     ownerAssetsQuery,
     (snapshot) => {
       const items = snapshot.docs.map((docSnap) => {
         const raw = docSnap.data() as Record<string, unknown>;
-        return mapUserUploadAsset(docSnap.id, raw);
+        return toUploadAssetDoc(docSnap.id, raw);
       });
       onData(items);
     },
@@ -235,6 +403,24 @@ export function subscribeToUserUploadAssets(
       if (onError) {
         onError(error);
       }
+    },
+  );
+}
+
+export function subscribeToUserUploadAssets(
+  ownerId: string,
+  onData: (items: UserUploadAssetListItem[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe {
+  return subscribeToUserUploads(
+    ownerId,
+    (uploads) => {
+      onData(uploads.map((upload) => mapUserUploadAsset(upload)));
+    },
+    onError,
+    {
+      visibility: "owner",
+      pageSize: 100,
     },
   );
 }

@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
-import {
-  subscribeToUserUploadAssets,
-  type UserUploadAssetListItem,
-} from "../services/uploadPipelineService";
+import type { UserUploadAssetListItem } from "../services/uploadPipelineService";
+import { useUserUploads } from "./useUserUploads";
 
 interface UseMyUploadAssetsResult {
   items: UserUploadAssetListItem[];
@@ -13,42 +10,33 @@ interface UseMyUploadAssetsResult {
 
 export function useMyUploadAssets(): UseMyUploadAssetsResult {
   const { firebaseUser, loading: authLoading } = useAuth();
-  const [items, setItems] = useState<UserUploadAssetListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    uploads,
+    loading: uploadsLoading,
+    error,
+  } = useUserUploads(firebaseUser?.uid, {
+    visibility: "owner",
+  });
 
-  useEffect(() => {
-    if (authLoading) {
-      setLoading(true);
-      return;
-    }
+  const items: UserUploadAssetListItem[] = uploads.map((upload) => ({
+    id: upload.id,
+    title: upload.title,
+    status: upload.status,
+    visibility: upload.visibility,
+    createdAt: upload.createdAt,
+    mimeType: upload.mimeType,
+    dimensions: {
+      width: upload.dimensions.width,
+      height: upload.dimensions.height,
+    },
+    previewUrl: upload.urls.previewUrl,
+    thumbnailUrl: upload.urls.thumbnailUrl,
+    originalUrl: upload.urls.originalUrl,
+  }));
 
-    if (!firebaseUser) {
-      setItems([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const unsubscribe = subscribeToUserUploadAssets(
-      firebaseUser.uid,
-      (nextItems) => {
-        setItems(nextItems);
-        setLoading(false);
-      },
-      (err) => {
-        setError(err.message || "Failed to load your uploads.");
-        setLoading(false);
-      },
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [authLoading, firebaseUser]);
-
-  return { items, loading, error };
+  return {
+    items,
+    loading: authLoading || uploadsLoading,
+    error,
+  };
 }
