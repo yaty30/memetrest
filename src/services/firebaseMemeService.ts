@@ -98,6 +98,9 @@ export class FirebaseMemeService implements MemeService {
     let clientTagFilter: string[] | null = null;
     const expandedTags = q.tags?.length ? expandTagAliases(q.tags) : null;
 
+    // Public gallery only shows approved memes (required by Firestore rules).
+    constraints.push(where("status", "==", "approved"));
+
     // Category filter (equality — always safe to combine)
     if (q.category) {
       constraints.push(where("category", "==", q.category));
