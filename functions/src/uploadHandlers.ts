@@ -274,15 +274,24 @@ export const finalizeUploadAsset = onCall<
     const bucket = getStorage().bucket();
     const file = bucket.file(originalPath);
     const [metadata] = await file.getMetadata();
-    const token =
+    let token =
       (metadata.metadata as Record<string, string> | undefined)
         ?.firebaseStorageDownloadTokens ?? null;
-    if (token) {
-      originalUrl = [
-        `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`,
-        `${encodeURIComponent(originalPath)}?alt=media&token=${token}`,
-      ].join("");
+
+    // Client SDK uploads don't auto-generate a download token.
+    // Create one so the owner can preview quarantined assets.
+    if (!token) {
+      const { randomUUID } = await import("crypto");
+      token = randomUUID();
+      await file.setMetadata({
+        metadata: { firebaseStorageDownloadTokens: token },
+      });
     }
+
+    originalUrl = [
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`,
+      `${encodeURIComponent(originalPath)}?alt=media&token=${token}`,
+    ].join("");
   } catch {
     // File metadata unavailable — proceed without a preview URL.
   }
