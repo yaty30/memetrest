@@ -115,8 +115,10 @@ service cloud.firestore {
     match /assets/{assetId} {
       // Canonical visibility rule: published + public only.
       // Private docs are owner/moderator only.
+      // NOTE: uses resource.data.ownerId directly (not the get()-based helper)
+      // so Firestore can evaluate list-query constraints against the rule.
       allow read: if isUploadAssetPublic(resource.data)
-        || isUploadAssetOwner(assetId)
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid)
         || isModerator();
 
       // Client writes are blocked; backend handlers (Admin SDK) own mutations.
