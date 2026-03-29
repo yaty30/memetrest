@@ -6,6 +6,7 @@ import {
   type DocumentReference,
   type Firestore,
 } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import {
   createAssetEvent,
@@ -264,6 +265,28 @@ export const finalizeUploadAsset = onCall<
 
   const tags = sanitizeTags(request.data?.tags);
 
+  // Resolve a persistent download URL for the quarantine original so the
+  // creator can preview their own upload. The token-based URL bypasses
+  // Storage security rules without weakening them.
+  const originalPath = getQuarantineOriginalPath(assetId);
+  let originalUrl: string | null = null;
+  try {
+    const bucket = getStorage().bucket();
+    const file = bucket.file(originalPath);
+    const [metadata] = await file.getMetadata();
+    const token =
+      (metadata.metadata as Record<string, string> | undefined)
+        ?.firebaseStorageDownloadTokens ?? null;
+    if (token) {
+      originalUrl = [
+        `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`,
+        `${encodeURIComponent(originalPath)}?alt=media&token=${token}`,
+      ].join("");
+    }
+  } catch {
+    // File metadata unavailable — proceed without a preview URL.
+  }
+
   const userRef = userRefByUid(db, uid);
   const assetRef = db.collection("assets").doc(assetId);
   const eventRef = assetRef.collection("events").doc();
@@ -307,6 +330,7 @@ export const finalizeUploadAsset = onCall<
         previewPath: getQuarantinePreviewPath(assetId),
         thumbnailPath: getQuarantineThumbnailPath(assetId),
       },
+      urls: { originalUrl },
       fileHash:
         typeof request.data?.fileHash === "string"
           ? request.data.fileHash.trim() || null
