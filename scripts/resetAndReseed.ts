@@ -216,6 +216,7 @@ async function uploadAndSeed() {
         language: "en",
         templateName: "",
         overlay: null,
+        status: "approved",
       };
 
       await setDoc(doc(db, "memes", fileNameWithoutExt), dbDoc);
