@@ -27,6 +27,8 @@ import RelatedMemes from "../components/RelatedMemes";
 import { memeService } from "../services";
 import type { Meme } from "../types/meme";
 import { PAGE_MAX_WIDTH, PAGE_NAV_PADDING_X } from "./pageLayout";
+import SignInDialog from "../components/SignInDialog";
+import { useMemeLike } from "../hooks/useMemeLike";
 
 interface MemeDetailContentProps {
   meme: Meme;
@@ -145,7 +147,12 @@ function MetadataSummary({ meme }: { meme: Meme }) {
   );
 }
 
-function ActionButtons({ meme }: { meme: Meme }) {
+interface ActionButtonsProps {
+  meme: Meme;
+  onLike: () => void;
+}
+
+function ActionButtons({ meme, onLike }: ActionButtonsProps) {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -164,30 +171,47 @@ function ActionButtons({ meme }: { meme: Meme }) {
   const actions = [
     {
       icon: Heart,
-      label: "Favorite",
-      onClick: undefined as (() => void) | undefined,
+      label: meme.viewerHasLiked ? "Liked" : "Like",
+      onClick: onLike,
+      active: Boolean(meme.viewerHasLiked),
+      disabled: false,
     },
     {
       icon: Share2,
       label: "Share",
       onClick: undefined as (() => void) | undefined,
+      active: false,
+      disabled: false,
     },
-    { icon: Link2, label: "Copy link", onClick: handleCopyLink },
-    { icon: Download, label: "Download", onClick: handleDownload },
+    {
+      icon: Link2,
+      label: "Copy link",
+      onClick: handleCopyLink,
+      active: false,
+      disabled: false,
+    },
+    {
+      icon: Download,
+      label: "Download",
+      onClick: handleDownload,
+      active: false,
+      disabled: false,
+    },
   ];
 
   return (
     <Stack direction="column" spacing={1} alignItems="center" gap={1.4}>
-      {actions.map(({ icon: Icon, label, onClick }) => (
+      {actions.map(({ icon: Icon, label, onClick, active, disabled }) => (
         <IconButton
           key={label}
           onClick={onClick}
           aria-label={label}
+          disabled={disabled}
           sx={(theme) => ({
             width: 60,
             height: 60,
             borderRadius: "14px",
-            color: "text.secondary",
+            color: active ? "error.main" : "text.secondary",
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
             bgcolor: alpha(theme.palette.background.paper, 0.52),
@@ -250,7 +274,8 @@ function MemeDetailContent({
   meme,
   onBack,
   onTagClick,
-}: MemeDetailContentProps) {
+  onLike,
+}: MemeDetailContentProps & { onLike: () => void }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -429,7 +454,7 @@ function MemeDetailContent({
         </Box>
 
         {/* Action rail */}
-        <ActionButtons meme={meme} />
+        <ActionButtons meme={meme} onLike={onLike} />
       </Box>
 
       {/* Metadata strip — connected to hero, more compositional weight */}
@@ -472,16 +497,46 @@ export default function ImageViewerPage() {
   const navigate = useNavigate();
   const [meme, setMeme] = useState<Meme | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const memeId = meme?.id ?? null;
+  const {
+    viewerHasLiked,
+    likeCount,
+    handleLike: handleMemeLike,
+  } = useMemeLike({
+    memeId,
+    initialLikeCount: meme?.likeCount ?? 0,
+    initialViewerHasLiked: meme?.viewerHasLiked,
+    onAuthRequired: () => setSignInOpen(true),
+  });
+  const displayMeme = meme
+    ? {
+        ...meme,
+        viewerHasLiked,
+        likeCount,
+      }
+    : null;
 
   useEffect(() => {
     if (!id) return;
-    memeService.getMemeById(id).then((item) => {
+    let cancelled = false;
+
+    void (async () => {
+      setNotFound(false);
+      setMeme(null);
+      const item = await memeService.getMemeById(id);
+      if (cancelled) return;
+
       if (item) {
         setMeme(item);
       } else {
         setNotFound(true);
       }
-    });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleBack = () => {
@@ -542,7 +597,7 @@ export default function ImageViewerPage() {
           >
             <Typography color="text.secondary">Image not found</Typography>
           </Box>
-        ) : !meme ? (
+        ) : !displayMeme ? (
           <Box
             sx={{
               display: "flex",
@@ -573,8 +628,9 @@ export default function ImageViewerPage() {
               })}
             >
               <MemeDetailContent
-                meme={meme}
+                meme={displayMeme}
                 onBack={handleBack}
+                onLike={handleMemeLike}
                 onTagClick={(tag) =>
                   navigate(`/?search=${encodeURIComponent(tag)}`)
                 }
@@ -582,10 +638,11 @@ export default function ImageViewerPage() {
             </Box>
 
             {/* Related memes — outside the card, same width */}
-            <RelatedMemes meme={meme} onSelect={handleRelatedSelect} />
+            <RelatedMemes meme={displayMeme} onSelect={handleRelatedSelect} />
           </>
         )}
       </Box>
+      <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   Chip,
@@ -21,6 +21,8 @@ import LinkIcon from "@mui/icons-material/Link";
 import type { Meme } from "../types/meme";
 import GifBadge from "./GifBadge";
 import { normalizeMediaDimensions } from "../utils/mediaDimensions";
+import { useMemeLike } from "../hooks/useMemeLike";
+import SignInDialog from "./SignInDialog";
 
 interface GalleryCardProps {
   item: Meme;
@@ -33,16 +35,25 @@ export default function GalleryCard({
   onSelect,
   onTagClick,
 }: GalleryCardProps) {
-  const [liked, setLiked] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
   const [isMediaLoaded, setIsMediaLoaded] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [snackMsg, setSnackMsg] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleLike = (e: React.MouseEvent) => {
+  const { viewerHasLiked, likeCount, likePending, handleLike } = useMemeLike({
+    memeId: item.id,
+    initialLikeCount: item.likeCount,
+    initialViewerHasLiked: item.viewerHasLiked,
+    onAuthRequired: () => setSignInOpen(true),
+  });
+
+  const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked((prev) => !prev);
+    handleLike();
   };
+
+  const liked = viewerHasLiked;
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -207,7 +218,7 @@ export default function GalleryCard({
               <Stack direction="row" spacing={0.5}>
                 <IconButton
                   size="small"
-                  onClick={handleLike}
+                  onClick={handleLikeClick}
                   aria-label="Favourite"
                   sx={{
                     color: liked ? "#ff4081" : "#fff",
@@ -292,7 +303,7 @@ export default function GalleryCard({
                 >
                   {displayName}
                 </Typography>
-                {item.likeCount > 0 && (
+                {likeCount > 0 && (
                   <>
                     <Box
                       sx={{
@@ -309,8 +320,8 @@ export default function GalleryCard({
                         fontWeight: 500,
                       }}
                     >
-                      {item.likeCount.toLocaleString()}{" "}
-                      {item.likeCount === 1 ? "like" : "likes"}
+                      {likeCount.toLocaleString()}{" "}
+                      {likeCount === 1 ? "like" : "likes"}
                     </Typography>
                   </>
                 )}
@@ -398,6 +409,7 @@ export default function GalleryCard({
         message={snackMsg}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
+      <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </>
   );
 }
