@@ -47,6 +47,7 @@ const baseAsset: UploadAssetDoc = {
   title: "asset",
   description: null,
   tags: [],
+  searchKeywords: [],
   status: "uploaded",
   visibility: "private",
   mimeType: "image/jpeg",

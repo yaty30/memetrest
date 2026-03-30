@@ -1,7 +1,13 @@
 import {
+  approveUploadAsset,
   finalizeUploadAsset,
   initializeUpload,
   submitAssetForReview,
 } from "./uploadHandlers";
 
-export { finalizeUploadAsset, initializeUpload, submitAssetForReview };
+export {
+  approveUploadAsset,
+  finalizeUploadAsset,
+  initializeUpload,
+  submitAssetForReview,
+};

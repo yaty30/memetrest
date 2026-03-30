@@ -54,6 +54,8 @@ interface FinalizeUploadAssetRequest {
   assetId: string;
   title: string;
   description?: string | null;
+  source?: string | null;
+  visibility?: UploadAssetDoc["visibility"];
   tags?: string[];
   mimeType: string;
   fileSize: number;
@@ -83,6 +85,16 @@ interface SubmitAssetForReviewResponse {
   submitted: boolean;
 }
 
+interface ApproveUploadAssetRequest {
+  assetId: string;
+}
+
+interface ApproveUploadAssetResponse {
+  assetId: string;
+  status: UploadAssetDoc["status"];
+  approved: boolean;
+}
+
 interface UserDocLike {
   uploadProfile?: UserUploadProfile;
 }
@@ -92,6 +104,19 @@ function requireAuthUid(uid?: string): string {
     throw new HttpsError("unauthenticated", "Authentication is required.");
   }
   return uid;
+}
+
+function requireAdminAuth(token: unknown): void {
+  const authToken =
+    typeof token === "object" && token !== null
+      ? (token as Record<string, unknown>)
+      : null;
+  if (authToken?.admin !== true) {
+    throw new HttpsError(
+      "permission-denied",
+      "Admin role is required for approval.",
+    );
+  }
 }
 
 function requireNonEmptyString(value: unknown, field: string): string {
@@ -114,13 +139,70 @@ function requirePositiveNumber(value: unknown, field: string): number {
   return value;
 }
 
-function sanitizeTags(tags: unknown): string[] {
+function normalizeTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
-  return tags
+
+  const normalized = tags
     .filter((tag): tag is string => typeof tag === "string")
     .map((tag) => tag.trim().toLowerCase())
     .filter((tag) => tag.length > 0)
     .slice(0, 30);
+
+  return Array.from(new Set(normalized));
+}
+
+function normalizeVisibility(
+  value: unknown,
+): UploadAssetDoc["visibility"] {
+  if (value == null) return "private";
+  if (value === "private" || value === "public") return value;
+  throw new HttpsError(
+    "invalid-argument",
+    "visibility must be either 'private' or 'public'.",
+  );
+}
+
+function normalizeSourceInput(value: unknown): {
+  sourceUrl: string | null;
+  attributionText: string | null;
+} {
+  if (typeof value !== "string") {
+    return { sourceUrl: null, attributionText: null };
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return { sourceUrl: null, attributionText: null };
+  }
+
+  let sourceUrl: string | null = null;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      sourceUrl = parsed.toString();
+    }
+  } catch {
+    // Keep source as attribution text when it's not a URL.
+  }
+
+  return {
+    sourceUrl,
+    attributionText: normalized,
+  };
+}
+
+function buildSearchKeywordsFromTags(tags: string[]): string[] {
+  const MAX_PREFIX_LEN = 10;
+  const keywords = new Set<string>();
+
+  for (const tag of tags) {
+    const limit = Math.min(tag.length, MAX_PREFIX_LEN);
+    for (let i = 1; i <= limit; i += 1) {
+      keywords.add(tag.slice(0, i));
+    }
+  }
+
+  return Array.from(keywords);
 }
 
 function floorToWindow(now: number, windowMs: number): number {
@@ -262,8 +344,15 @@ export const finalizeUploadAsset = onCall<
     typeof request.data?.description === "string"
       ? request.data.description.trim() || null
       : null;
+  const visibility = normalizeVisibility(request.data?.visibility);
+  const source = normalizeSourceInput(request.data?.source);
+  const shouldAutoSubmitForReview = visibility === "public";
+  const finalStatus: UploadAssetDoc["status"] = shouldAutoSubmitForReview
+    ? "pending_review"
+    : "uploaded";
 
-  const tags = sanitizeTags(request.data?.tags);
+  const tags = normalizeTags(request.data?.tags);
+  const searchKeywords = buildSearchKeywordsFromTags(tags);
 
   // Resolve a persistent download URL for the quarantine original so the
   // creator can preview their own upload. The token-based URL bypasses
@@ -299,6 +388,7 @@ export const finalizeUploadAsset = onCall<
   const userRef = userRefByUid(db, uid);
   const assetRef = db.collection("assets").doc(assetId);
   const eventRef = assetRef.collection("events").doc();
+  const reviewEventRef = assetRef.collection("events").doc();
 
   await db.runTransaction(async (tx) => {
     const [userSnap, assetSnap] = await Promise.all([
@@ -326,6 +416,7 @@ export const finalizeUploadAsset = onCall<
       title,
       description,
       tags,
+      searchKeywords,
       mimeType,
       fileSize,
       isAnimated: mimeType.toLowerCase() === "image/gif",
@@ -360,6 +451,21 @@ export const finalizeUploadAsset = onCall<
       now,
     });
 
+    const reviewEvent = shouldAutoSubmitForReview
+      ? createAssetEvent({
+          id: reviewEventRef.id,
+          assetId,
+          actorId: uid,
+          type: "submitted_for_review",
+          metadata: {
+            reasonCode: null,
+            fromStatus: "uploaded",
+            toStatus: "pending_review",
+          },
+          now,
+        })
+      : null;
+
     tx.set(assetRef, {
       ...asset,
       createdAt: Timestamp.fromMillis(asset.createdAt),
@@ -380,15 +486,24 @@ export const finalizeUploadAsset = onCall<
       },
       source: {
         sourceType: "upload",
-        sourceUrl: null,
-        attributionText: null,
+        sourceUrl: source.sourceUrl,
+        attributionText: source.attributionText,
       },
+      status: finalStatus,
+      visibility,
     });
 
     tx.set(eventRef, {
       ...uploadEvent,
       createdAt: Timestamp.fromMillis(uploadEvent.createdAt),
     });
+
+    if (reviewEvent) {
+      tx.set(reviewEventRef, {
+        ...reviewEvent,
+        createdAt: Timestamp.fromMillis(reviewEvent.createdAt),
+      });
+    }
 
     tx.set(
       userRef,
@@ -402,8 +517,8 @@ export const finalizeUploadAsset = onCall<
 
   return {
     assetId,
-    status: "uploaded",
-    visibility: "private",
+    status: finalStatus,
+    visibility,
     createdAt: now,
   };
 });
@@ -492,5 +607,88 @@ export const submitAssetForReview = onCall<
     assetId,
     status: resultingStatus,
     submitted,
+  };
+});
+
+export const approveUploadAsset = onCall<
+  ApproveUploadAssetRequest,
+  Promise<ApproveUploadAssetResponse>
+>({ invoker: "public" }, async (request) => {
+  const approverId = requireAuthUid(request.auth?.uid);
+  requireAdminAuth(request.auth?.token);
+
+  const now = Date.now();
+  const assetId = requireNonEmptyString(request.data?.assetId, "assetId");
+  const nowTimestamp = Timestamp.fromMillis(now);
+  const assetRef = db.collection("assets").doc(assetId);
+  const eventRef = assetRef.collection("events").doc();
+
+  let approved = false;
+  let resultingStatus: UploadAssetDoc["status"] = "pending_review";
+
+  await db.runTransaction(async (tx) => {
+    const assetSnap = await tx.get(assetRef);
+    if (!assetSnap.exists) {
+      throw new HttpsError("not-found", "Asset not found.");
+    }
+
+    const asset = assetSnap.data() as Partial<UploadAssetDoc>;
+    if (asset.ownerId === approverId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Approver cannot approve their own upload.",
+      );
+    }
+
+    if (asset.status !== "pending_review") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only pending_review assets can be approved.",
+      );
+    }
+
+    const approvalEvent = createAssetEvent({
+      id: eventRef.id,
+      assetId,
+      actorId: approverId,
+      type: "approved",
+      metadata: {
+        reasonCode: null,
+        fromStatus: "pending_review",
+        toStatus: "published",
+      },
+      now,
+    });
+
+    tx.set(
+      assetRef,
+      {
+        status: "published",
+        visibility: "public",
+        moderation: {
+          finalDecision: "approved",
+          decidedAt: nowTimestamp,
+          decidedBy: approverId,
+          reviewedAt: nowTimestamp,
+          reviewedBy: approverId,
+        },
+        updatedAt: nowTimestamp,
+      },
+      { merge: true },
+    );
+
+    tx.set(eventRef, {
+      ...approvalEvent,
+      createdAt: nowTimestamp,
+    });
+
+    resultingStatus = "published";
+    approved = true;
+  });
+
+  return {
+    assetId,
+    status: resultingStatus,
+    approved,
   };
 });

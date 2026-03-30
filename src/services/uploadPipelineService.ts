@@ -38,7 +38,9 @@ interface FinalizeUploadAssetRequest {
   assetId: string;
   title: string;
   description?: string | null;
+  source?: string | null;
   tags?: string[];
+  visibility?: UploadAssetVisibility;
   mimeType: string;
   fileSize: number;
   dimensions: {
@@ -70,7 +72,9 @@ interface SubmitAssetForReviewResponse {
 export interface UploadAssetMetadataInput {
   title: string;
   description?: string | null;
+  source?: string | null;
   tags?: string[];
+  visibility?: UploadAssetVisibility;
   fileHash?: string | null;
 }
 
@@ -215,6 +219,9 @@ function mapUploadAssetDoc(
   const ownerId = asString(data.ownerId, "");
   const descriptionRaw = data.description;
   const tagsRaw = Array.isArray(data.tags) ? data.tags : [];
+  const searchKeywordsRaw = Array.isArray(data.searchKeywords)
+    ? data.searchKeywords
+    : [];
   const storageRaw =
     typeof data.storage === "object" && data.storage !== null
       ? (data.storage as Record<string, unknown>)
@@ -276,6 +283,9 @@ function mapUploadAssetDoc(
     tags: tagsRaw
       .map((tag) => asString(tag, "").trim())
       .filter((tag) => tag.length > 0),
+    searchKeywords: searchKeywordsRaw
+      .map((keyword) => asString(keyword, "").trim().toLowerCase())
+      .filter((keyword) => keyword.length > 0),
     status: asString(data.status, "uploaded") as UploadAssetStatus,
     visibility: asString(data.visibility, "private") as UploadAssetVisibility,
     mimeType: asString(data.mimeType, "unknown"),
@@ -519,7 +529,9 @@ export async function uploadAssetThroughBackend(
     assetId: init.assetId,
     title: metadata.title,
     description: metadata.description ?? null,
+    source: metadata.source ?? null,
     tags: normalizeTags(metadata.tags),
+    visibility: metadata.visibility ?? "private",
     mimeType: file.type,
     fileSize: file.size,
     dimensions,

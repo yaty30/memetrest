@@ -88,6 +88,7 @@ export interface CreateInitialAssetDocInput {
   title: string;
   description?: string | null;
   tags?: string[];
+  searchKeywords?: string[];
   mimeType: string;
   fileSize: number;
   isAnimated?: boolean;
@@ -118,6 +119,7 @@ export function createInitialAssetDoc(
     title: input.title,
     description: input.description ?? null,
     tags: input.tags ?? [],
+    searchKeywords: input.searchKeywords ?? [],
     status: "uploaded",
     visibility: "private",
     mimeType: input.mimeType,
