@@ -13,7 +13,8 @@
     "audit:image-dimensions": "node scripts/verifyFirestoreImageDimensions.mjs",
     "backfill:image-dimensions": "node scripts/backfillFirestoreIntrinsicDimensions.mjs",
     "backfill:image-dimensions:fix": "node scripts/backfillFirestoreIntrinsicDimensions.mjs --fix",
-    "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts"
+    "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts",
+    "deploy": "npx firebase-tools deploy --project memetrest-b57dc"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

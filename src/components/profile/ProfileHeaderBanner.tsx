@@ -43,6 +43,8 @@ export default function ProfileHeaderBanner({
         height: BANNER_H,
         overflow: "hidden",
         bgcolor: "surface.input",
+        opacity: showBanner ? 1 : 0.6,
+        transition: "background-color 0.3s, opacity 0.3s",
         ...(!shouldShowBannerImage && {
           background:
             "linear-gradient(135deg, rgba(30,30,30,1) 0%, rgba(40,40,40,1) 50%, rgba(25,25,25,1) 100%)",

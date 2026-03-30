@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   IconButton,
+  Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -25,6 +26,9 @@ import {
 
 interface ProfileHeaderBarProps {
   profile: UserProfile;
+  uploadCount: number;
+  uploadCountLoading: boolean;
+  uploadCountError: string | null;
   name: string;
   initials: string;
   isOwnProfile: boolean;
@@ -41,6 +45,9 @@ function fmtJoined(d: Date) {
 
 export default function ProfileHeaderBar({
   profile,
+  uploadCount,
+  uploadCountLoading,
+  uploadCountError,
   name,
   initials,
   isOwnProfile,
@@ -168,7 +175,12 @@ export default function ProfileHeaderBar({
             justifyContent: { xs: "center", sm: "flex-start" },
           }}
         >
-          <StatBlock value={profile.uploadCount} label="Uploads" />
+          <StatBlock
+            value={uploadCount}
+            label="Uploads"
+            loading={uploadCountLoading}
+            hasError={Boolean(uploadCountError)}
+          />
           <StatBlock value={profile.savedCount} label="Saved" />
         </Stack>
 
@@ -257,19 +269,41 @@ export default function ProfileHeaderBar({
   );
 }
 
-function StatBlock({ value, label }: { value: number; label: string }) {
+function StatBlock({
+  value,
+  label,
+  loading,
+  hasError,
+}: {
+  value: number;
+  label: string;
+  loading?: boolean;
+  hasError?: boolean;
+}) {
   return (
     <Box sx={{ textAlign: "center", minWidth: 44 }}>
-      <Typography
-        sx={{
-          fontWeight: 700,
-          fontSize: { xs: "1.1rem", sm: "1.2rem", md: "1.35rem" },
-          color: "text.primary",
-          lineHeight: 1.2,
-        }}
-      >
-        {value}
-      </Typography>
+      {loading ? (
+        <Skeleton
+          variant="rounded"
+          sx={{
+            mx: "auto",
+            width: { xs: 24, sm: 28 },
+            height: { xs: 22, sm: 24 },
+            borderRadius: "6px",
+          }}
+        />
+      ) : (
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: { xs: "1.1rem", sm: "1.2rem", md: "1.35rem" },
+            color: "text.primary",
+            lineHeight: 1.2,
+          }}
+        >
+          {hasError ? "--" : value}
+        </Typography>
+      )}
       <Typography
         sx={{
           fontSize: { xs: "0.6rem", md: "0.65rem" },

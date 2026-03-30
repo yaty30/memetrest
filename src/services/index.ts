@@ -3,6 +3,24 @@ import { MockMemeService } from "./mockMemeService";
 import { FirebaseMemeService } from "./firebaseMemeService";
 
 export { validateMemeFile } from "./uploadValidation";
+export {
+  createAssetEvent,
+  createDefaultUserUploadProfile,
+  createInitialAssetDoc,
+} from "./uploadDefaults";
+export {
+  finalizeUploadAsset,
+  initializeUpload,
+  submitAssetForReview,
+  uploadAssetThroughBackend,
+} from "./uploadPipelineService";
+export {
+  hasExceededUploadLimits,
+  isEligibleForPublicPublish,
+  isPublicAsset,
+  isReviewableAssetStatus,
+  isUploadSuspended,
+} from "./uploadGuards";
 export { extractMediaMetadata } from "./mediaMetadata";
 export {
   getDefaultAsset,

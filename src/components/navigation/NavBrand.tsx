@@ -1,14 +1,18 @@
 import { Stack, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 // import iconSrc from "../../assets/icon.png";
 import Logo from "../Logo";
 
 export default function NavBrand() {
+  const navigate = useNavigate();
+
   return (
     <Stack
       direction="row"
       alignItems="center"
       spacing={1}
-      sx={{ flexShrink: 0 }}
+      onClick={() => navigate("/")}
+      sx={{ flexShrink: 0, cursor: "pointer" }}
     >
       <Logo />
       <Typography

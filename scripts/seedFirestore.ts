@@ -149,6 +149,7 @@ async function seedFirestore() {
               name: "Tiffany Gleason",
             }
           : null,
+      status: "approved",
     };
 
     await setDoc(doc(db, "memes", fileNameWithoutExt), memeDoc);

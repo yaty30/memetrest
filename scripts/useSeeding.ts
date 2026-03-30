@@ -155,6 +155,7 @@ export async function seedFromDirectory({
         language: "en",
         templateName: "",
         overlay: null,
+        status: "approved",
       });
 
       console.log(

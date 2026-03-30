@@ -3,6 +3,8 @@ import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { ProfileHeader } from "../components/profile";
 import ProfileTabs from "../components/profile/ProfileTabs";
+import { useUserUploads } from "../hooks/useUserUploads";
+import { getProfileVisibleUploadCount } from "../services/uploadSummary";
 import type { UserProfile } from "../types/user";
 
 interface ProfileViewProps {
@@ -60,6 +62,23 @@ export default function ProfileView({
   notFound,
   onBack,
 }: ProfileViewProps) {
+  const {
+    totalCount,
+    publishedCount,
+    loading: uploadsLoading,
+    error: uploadsError,
+  } = useUserUploads(profile?.uid, {
+    visibility: isOwnProfile ? "owner" : "public",
+  });
+
+  const visibleUploadCount = getProfileVisibleUploadCount(
+    {
+      totalCount,
+      publishedCount,
+    },
+    isOwnProfile,
+  );
+
   if (loading) {
     return (
       <Box
@@ -100,6 +119,9 @@ export default function ProfileView({
       <ProfileHeader
         profile={profile}
         isOwnProfile={isOwnProfile}
+        uploadCount={visibleUploadCount}
+        uploadCountLoading={uploadsLoading}
+        uploadCountError={uploadsError}
         onBack={onBack}
       />
       <ProfileTabs profile={profile} isOwnProfile={isOwnProfile} />

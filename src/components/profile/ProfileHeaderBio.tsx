@@ -41,6 +41,7 @@ export default function ProfileHeaderBio({
             fontSize: "0.78rem",
             color: "text.disabled",
             fontStyle: "italic",
+            my: 2.4,
             textAlign: { xs: "center", sm: "left" },
           }}
         >

@@ -4,7 +4,10 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // ── Storage path strategy ─────────────────────────────────────────
-    // Uploads: uploads/{uid}/{filename}
+    // Legacy uploads: uploads/{uid}/{filename}
+    // Upload-domain backend paths:
+    //   uploads/quarantine/{assetId}/{variant}
+    //   uploads/public/{assetId}/{variant}
     //
     // • Only the owning user can write to their own folder.
     // • Anyone can read (approved assets serve public URLs).
@@ -13,17 +16,42 @@ service firebase.storage {
     // • Allowed content types: image/jpeg, image/png, image/webp, image/gif.
 
     match /uploads/{uid}/{allPaths=**} {
-      // Anyone can read — public gallery URLs
-      allow read: if true;
+      // Keep legacy behavior, but exclude upload-domain namespaces.
+      allow read: if uid != 'quarantine' && uid != 'public';
 
       // Only the authenticated owner can upload to their own path
       allow write: if request.auth != null
+        && uid != 'quarantine'
+        && uid != 'public'
         && request.auth.uid == uid
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
 
       allow delete: if request.auth != null
+        && uid != 'quarantine'
+        && uid != 'public'
         && request.auth.uid == uid;
+    }
+
+    // Quarantine assets are uploaded pre-review. Writes are auth-only and
+    // constrained to known media variants; reads are restricted.
+    match /uploads/quarantine/{assetId}/{variant} {
+      allow read: if false;
+
+      // Temporary limitation: ownership cannot be fully proven in Storage rules
+      // with current path shape alone; backend finalization enforces ownerId.
+      allow create, update: if request.auth != null
+        && variant in ['original', 'preview', 'thumbnail']
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+
+      allow delete: if false;
+    }
+
+    // Public upload-domain objects are server-controlled in this phase.
+    match /uploads/public/{assetId}/{variant} {
+      allow read: if false;
+      allow write, delete: if false;
     }
   }
 }
