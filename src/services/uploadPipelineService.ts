@@ -38,7 +38,9 @@ interface FinalizeUploadAssetRequest {
   assetId: string;
   title: string;
   description?: string | null;
+  source?: string | null;
   tags?: string[];
+  visibility?: UploadAssetVisibility;
   mimeType: string;
   fileSize: number;
   dimensions: {
@@ -67,10 +69,33 @@ interface SubmitAssetForReviewResponse {
   submitted: boolean;
 }
 
+interface ApproveUploadAssetRequest {
+  assetId: string;
+}
+
+interface ApproveUploadAssetResponse {
+  assetId: string;
+  status: "uploaded" | "pending_review" | "published" | "rejected" | "removed";
+  approved: boolean;
+}
+
+interface RejectUploadAssetRequest {
+  assetId: string;
+  reason?: string | null;
+}
+
+interface RejectUploadAssetResponse {
+  assetId: string;
+  status: "uploaded" | "pending_review" | "published" | "rejected" | "removed";
+  rejected: boolean;
+}
+
 export interface UploadAssetMetadataInput {
   title: string;
   description?: string | null;
+  source?: string | null;
   tags?: string[];
+  visibility?: UploadAssetVisibility;
   fileHash?: string | null;
 }
 
@@ -101,6 +126,10 @@ export type UserUploadsVisibility = "owner" | "public";
 
 interface UserUploadsQueryOptions {
   visibility?: UserUploadsVisibility;
+  pageSize?: number;
+}
+
+interface PendingReviewQueryOptions {
   pageSize?: number;
 }
 
@@ -215,6 +244,9 @@ function mapUploadAssetDoc(
   const ownerId = asString(data.ownerId, "");
   const descriptionRaw = data.description;
   const tagsRaw = Array.isArray(data.tags) ? data.tags : [];
+  const searchKeywordsRaw = Array.isArray(data.searchKeywords)
+    ? data.searchKeywords
+    : [];
   const storageRaw =
     typeof data.storage === "object" && data.storage !== null
       ? (data.storage as Record<string, unknown>)
@@ -276,6 +308,9 @@ function mapUploadAssetDoc(
     tags: tagsRaw
       .map((tag) => asString(tag, "").trim())
       .filter((tag) => tag.length > 0),
+    searchKeywords: searchKeywordsRaw
+      .map((keyword) => asString(keyword, "").trim().toLowerCase())
+      .filter((keyword) => keyword.length > 0),
     status: asString(data.status, "uploaded") as UploadAssetStatus,
     visibility: asString(data.visibility, "private") as UploadAssetVisibility,
     mimeType: asString(data.mimeType, "unknown"),
@@ -454,6 +489,37 @@ export function subscribeToUserUploadAssets(
   );
 }
 
+export function subscribeToPendingReviewUploads(
+  onData: (items: UploadAssetDoc[]) => void,
+  onError?: (error: Error) => void,
+  options: PendingReviewQueryOptions = {},
+): Unsubscribe {
+  const { pageSize = 200 } = options;
+  const assetsRef = collection(db, "assets");
+  const approvalsQuery = query(
+    assetsRef,
+    where("status", "==", "pending_review"),
+    orderBy("createdAt", "desc"),
+    limit(pageSize),
+  );
+
+  return onSnapshot(
+    approvalsQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((docSnap) => {
+        const raw = docSnap.data() as Record<string, unknown>;
+        return toUploadAssetDoc(docSnap.id, raw);
+      });
+      onData(items);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+  );
+}
+
 export async function initializeUpload(
   input: InitializeUploadRequest,
 ): Promise<InitializeUploadResponse> {
@@ -499,6 +565,36 @@ export async function submitAssetForReview(
   }
 }
 
+export async function approveUploadAsset(
+  input: ApproveUploadAssetRequest,
+): Promise<ApproveUploadAssetResponse> {
+  try {
+    const callable = httpsCallable<
+      ApproveUploadAssetRequest,
+      ApproveUploadAssetResponse
+    >(functionsClient, "approveUploadAsset");
+    const result = await callable(input);
+    return result.data;
+  } catch (error) {
+    throw toCallableError("approveUploadAsset", error);
+  }
+}
+
+export async function rejectUploadAsset(
+  input: RejectUploadAssetRequest,
+): Promise<RejectUploadAssetResponse> {
+  try {
+    const callable = httpsCallable<
+      RejectUploadAssetRequest,
+      RejectUploadAssetResponse
+    >(functionsClient, "rejectUploadAsset");
+    const result = await callable(input);
+    return result.data;
+  } catch (error) {
+    throw toCallableError("rejectUploadAsset", error);
+  }
+}
+
 export async function uploadAssetThroughBackend(
   file: File,
   metadata: UploadAssetMetadataInput,
@@ -519,7 +615,9 @@ export async function uploadAssetThroughBackend(
     assetId: init.assetId,
     title: metadata.title,
     description: metadata.description ?? null,
+    source: metadata.source ?? null,
     tags: normalizeTags(metadata.tags),
+    visibility: metadata.visibility ?? "private",
     mimeType: file.type,
     fileSize: file.size,
     dimensions,

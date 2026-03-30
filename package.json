@@ -13,6 +13,8 @@
     "audit:image-dimensions": "node scripts/verifyFirestoreImageDimensions.mjs",
     "backfill:image-dimensions": "node scripts/backfillFirestoreIntrinsicDimensions.mjs",
     "backfill:image-dimensions:fix": "node scripts/backfillFirestoreIntrinsicDimensions.mjs --fix",
+    "backfill:meme-search-keywords": "npx tsx scripts/backfillMemeSearchKeywords.ts",
+    "backfill:meme-search-keywords:fix": "npx tsx scripts/backfillMemeSearchKeywords.ts --apply",
     "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts",
     "deploy": "npx firebase-tools deploy --project memetrest-b57dc"
   },

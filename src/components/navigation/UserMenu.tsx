@@ -10,11 +10,10 @@ import {
   ButtonBase,
   Button,
   Box,
-  Alert,
-  Snackbar,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
@@ -28,25 +27,6 @@ import { useAppSelector } from "../../store/hooks";
 import { signOut } from "../../services/authService";
 import SignInDialog from "../SignInDialog";
 import { useCanUpload } from "../../hooks/useCanUpload";
-import { validateMemeFile } from "../../services/uploadValidation";
-import { uploadAssetThroughBackend } from "../../services/uploadPipelineService";
-
-const MENU_ITEMS = [
-  { label: "Upload", icon: <CloudUploadOutlinedIcon fontSize="small" /> },
-  {
-    label: "My Uploads",
-    icon: <Inventory2OutlinedIcon fontSize="small" />,
-  },
-  { label: "Profile", icon: <PersonOutlineIcon fontSize="small" /> },
-  { label: "Favorites", icon: <FavoriteBorderIcon fontSize="small" /> },
-  { label: "Settings", icon: <SettingsOutlinedIcon fontSize="small" /> },
-  { label: "Logout", icon: <LogoutIcon fontSize="small" />, divider: true },
-] as const;
-
-function deriveTitleFromFileName(name: string): string {
-  const noExt = name.replace(/\.[^.]+$/, "").trim();
-  return noExt || "Untitled Upload";
-}
 
 export default function UserMenu() {
   const { firebaseUser, loading } = useAuth();
@@ -57,68 +37,33 @@ export default function UserMenu() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [signInOpen, setSignInOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const open = Boolean(anchorEl);
-  const fileInputId = "user-menu-upload-input";
-
-  const handleFileSelected = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    if (!uploadPermission.allowed) {
-      setUploadError(uploadPermission.reason ?? "You cannot upload right now.");
-      return;
-    }
-
-    const validation = validateMemeFile(file);
-    if (!validation.valid) {
-      setUploadError(validation.error ?? "Invalid file selected.");
-      return;
-    }
-
-    setUploading(true);
-    setUploadError(null);
-    setUploadSuccess(null);
-
-    try {
-      const result = await uploadAssetThroughBackend(file, {
-        title: deriveTitleFromFileName(file.name),
-        tags: [],
-      });
-
-      setUploadSuccess(
-        `Upload accepted (${result.status}/${result.visibility}). Upload is private until separately published.`,
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Upload failed. Please try again.";
-      setUploadError(message);
-    } finally {
-      setUploading(false);
-    }
-  };
+  const isAdmin = userProfile?.role === "admin";
+  const menuItems = [
+    { label: "Upload", icon: <CloudUploadOutlinedIcon fontSize="small" /> },
+    {
+      label: "My Uploads",
+      icon: <Inventory2OutlinedIcon fontSize="small" />,
+    },
+    ...(isAdmin
+      ? [
+          {
+            label: "Pending Approvals",
+            icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />,
+          },
+        ]
+      : []),
+    { label: "Profile", icon: <PersonOutlineIcon fontSize="small" /> },
+    { label: "Favorites", icon: <FavoriteBorderIcon fontSize="small" /> },
+    { label: "Settings", icon: <SettingsOutlinedIcon fontSize="small" /> },
+    { label: "Logout", icon: <LogoutIcon fontSize="small" />, divider: true },
+  ];
 
   const handleMenuAction = async (label: string) => {
     setAnchorEl(null);
     if (label === "Upload") {
-      if (!uploadPermission.allowed) {
-        setUploadError(
-          uploadPermission.reason ?? "You cannot upload right now.",
-        );
-        return;
-      }
-
-      const input = document.getElementById(
-        fileInputId,
-      ) as HTMLInputElement | null;
-      input?.click();
+      if (!uploadPermission.allowed) return;
+      navigate("/upload");
       return;
     }
 
@@ -126,6 +71,8 @@ export default function UserMenu() {
       await signOut();
     } else if (label === "My Uploads") {
       navigate("/my-uploads");
+    } else if (label === "Pending Approvals") {
+      navigate("/admin/approvals");
     } else if (label === "Profile") {
       navigate("/profile");
     }
@@ -168,14 +115,6 @@ export default function UserMenu() {
 
   return (
     <>
-      <input
-        id={fileInputId}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        style={{ display: "none" }}
-        onChange={handleFileSelected}
-      />
-
       <ButtonBase
         onClick={(e) => setAnchorEl(e.currentTarget)}
         disableRipple
@@ -256,14 +195,11 @@ export default function UserMenu() {
           },
         }}
       >
-        {MENU_ITEMS.map((item) => (
+        {menuItems.map((item) => (
           <MenuItem
             key={item.label}
             onClick={() => handleMenuAction(item.label)}
-            disabled={
-              uploading ||
-              (item.label === "Upload" && !uploadPermission.allowed)
-            }
+            disabled={item.label === "Upload" && !uploadPermission.allowed}
             sx={{
               py: 1.2,
               px: 2,
@@ -303,28 +239,6 @@ export default function UserMenu() {
           </MenuItem>
         ))}
       </Menu>
-
-      <Snackbar
-        open={Boolean(uploadSuccess)}
-        autoHideDuration={4000}
-        onClose={() => setUploadSuccess(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" onClose={() => setUploadSuccess(null)}>
-          {uploadSuccess}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={Boolean(uploadError)}
-        autoHideDuration={5000}
-        onClose={() => setUploadError(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="error" onClose={() => setUploadError(null)}>
-          {uploadError}
-        </Alert>
-      </Snackbar>
     </>
   );
 }

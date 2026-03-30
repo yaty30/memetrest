@@ -180,6 +180,7 @@ export interface UploadAssetDoc {
   title: string;
   description: string | null;
   tags: string[];
+  searchKeywords: string[];
 
   status: UploadAssetStatus;
   visibility: UploadAssetVisibility;
