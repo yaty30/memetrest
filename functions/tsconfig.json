@@ -16,5 +16,6 @@
     "../src/services/uploadGuards.ts",
     "../src/utils/uploadStoragePaths.ts",
     "../src/types/upload.ts"
-  ]
+  ],
+  "exclude": ["src/**/*.test.ts"]
 }
