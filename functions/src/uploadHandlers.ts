@@ -23,6 +23,7 @@ import {
   getQuarantinePreviewPath,
   getQuarantineThumbnailPath,
 } from "../../src/utils/uploadStoragePaths";
+import { buildSearchKeywordsFromTags } from "../../src/utils/searchKeywords";
 import type { UploadAssetDoc, UserUploadProfile } from "../../src/types/upload";
 
 initializeApp();
@@ -97,6 +98,45 @@ interface ApproveUploadAssetResponse {
 
 interface UserDocLike {
   uploadProfile?: UserUploadProfile;
+}
+
+interface MemeOverlayDoc {
+  avatar: string;
+  name: string;
+}
+
+interface MemeBridgeDoc {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  searchKeywords: string[];
+  category: string;
+  templateName: string;
+  language: string;
+  imageUrl: string;
+  storagePath: string;
+  mimeType: string;
+  animated: boolean;
+  thumbnailUrl: string | null;
+  width: number;
+  height: number;
+  aspectRatio: number;
+  nsfw: boolean;
+  sensitive: boolean;
+  status: "approved";
+  uploadedBy: string | null;
+  overlay: MemeOverlayDoc | null;
+  moderatedBy: string | null;
+  moderatedAt: Timestamp;
+  publishedAt: Timestamp;
+  updatedAt: Timestamp;
+  createdAt?: Timestamp;
+  uploadedAt?: Timestamp;
+  likeCount?: number;
+  shareCount?: number;
+  downloadCount?: number;
+  popularityScore?: number;
 }
 
 function requireAuthUid(uid?: string): string {
@@ -191,20 +231,6 @@ function normalizeSourceInput(value: unknown): {
   };
 }
 
-function buildSearchKeywordsFromTags(tags: string[]): string[] {
-  const MAX_PREFIX_LEN = 10;
-  const keywords = new Set<string>();
-
-  for (const tag of tags) {
-    const limit = Math.min(tag.length, MAX_PREFIX_LEN);
-    for (let i = 1; i <= limit; i += 1) {
-      keywords.add(tag.slice(0, i));
-    }
-  }
-
-  return Array.from(keywords);
-}
-
 function floorToWindow(now: number, windowMs: number): number {
   return Math.floor(now / windowMs) * windowMs;
 }
@@ -284,6 +310,173 @@ function applyUploadUsageIncrement(
 
 function userRefByUid(firestore: Firestore, uid: string): DocumentReference {
   return firestore.collection("users").doc(uid);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null) return null;
+  return value as Record<string, unknown>;
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+function asFiniteNumber(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return fallback;
+}
+
+function asMillis(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (value instanceof Date) return value.getTime();
+  if (value instanceof Timestamp) return value.toMillis();
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toMillis" in value &&
+    typeof (value as { toMillis: unknown }).toMillis === "function"
+  ) {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+  return fallback;
+}
+
+function mapApprovedAssetToMemeDoc(input: {
+  assetId: string;
+  assetData: Record<string, unknown>;
+  ownerData: Record<string, unknown> | null;
+  existingMemeData: Record<string, unknown> | null;
+  approverId: string;
+  now: number;
+}): MemeBridgeDoc {
+  const { assetId, assetData, ownerData, existingMemeData, approverId, now } =
+    input;
+  const nowTimestamp = Timestamp.fromMillis(now);
+
+  const dimensions = asRecord(assetData.dimensions);
+  const storage = asRecord(assetData.storage);
+  const urls = asRecord(assetData.urls);
+  const moderation = asRecord(assetData.moderation);
+  const ownerAvatar = asRecord(ownerData?.avatar);
+
+  const title = asString(assetData.title).trim() || "Untitled";
+  const description = asString(assetData.description).trim();
+  const tags = normalizeTags(assetData.tags);
+  const searchKeywords = buildSearchKeywordsFromTags(tags);
+
+  const mimeType = asString(assetData.mimeType) || "image/jpeg";
+  const animated =
+    Boolean(assetData.isAnimated) || mimeType.toLowerCase() === "image/gif";
+
+  const width = asFiniteNumber(dimensions?.width, 480);
+  const existingWidth = asFiniteNumber(existingMemeData?.width, 480);
+  const existingHeight = asFiniteNumber(existingMemeData?.height, 320);
+  const height = asFiniteNumber(dimensions?.height, existingHeight);
+  const aspectRatio = asFiniteNumber(
+    dimensions?.aspectRatio,
+    height > 0
+      ? width / height
+      : existingHeight > 0
+        ? existingWidth / existingHeight
+        : 1,
+  );
+
+  const imageUrl =
+    asString(urls?.previewUrl) ||
+    asString(urls?.originalUrl) ||
+    asString(urls?.thumbnailUrl) ||
+    asString(existingMemeData?.imageUrl);
+  const thumbnailUrl =
+    asString(urls?.thumbnailUrl) || asString(existingMemeData?.thumbnailUrl);
+  const storagePath =
+    asString(storage?.originalPath) || asString(existingMemeData?.storagePath);
+  const uploadedBy =
+    asString(assetData.ownerId) || asString(existingMemeData?.uploadedBy) || null;
+
+  const displayName =
+    asString(ownerData?.displayName).trim() ||
+    asString(ownerData?.authDisplayName).trim() ||
+    asString(ownerData?.username).trim();
+  const avatarUrl = asString(ownerAvatar?.url).trim();
+  const overlay =
+    displayName.length > 0
+      ? {
+          avatar: avatarUrl,
+          name: displayName,
+        }
+      : (asRecord(existingMemeData?.overlay) as MemeOverlayDoc | null);
+
+  const scanResult = asString(moderation?.scanResult).toLowerCase();
+  const sensitive = Boolean(moderation?.userSensitiveFlag);
+  const nsfw = scanResult === "explicit";
+
+  const createdAtMillis = asMillis(assetData.createdAt, now);
+  const moderatedAtMillis = asMillis(
+    moderation?.reviewedAt,
+    asMillis(existingMemeData?.moderatedAt, now),
+  );
+  const publishedAtMillis = asMillis(existingMemeData?.publishedAt, now);
+  const existingLikeCount = existingMemeData?.likeCount;
+  const existingShareCount = existingMemeData?.shareCount;
+  const existingDownloadCount = existingMemeData?.downloadCount;
+  const existingPopularityScore = existingMemeData?.popularityScore;
+
+  return {
+    id: assetId,
+    title,
+    description,
+    tags,
+    searchKeywords,
+    category: asString(existingMemeData?.category) || "uncategorized",
+    templateName: asString(existingMemeData?.templateName),
+    language: asString(existingMemeData?.language) || "en",
+    imageUrl,
+    storagePath,
+    mimeType: mimeType || asString(existingMemeData?.mimeType) || "image/jpeg",
+    animated,
+    thumbnailUrl: thumbnailUrl || null,
+    width: asFiniteNumber(dimensions?.width, existingWidth),
+    height,
+    aspectRatio,
+    nsfw,
+    sensitive,
+    status: "approved",
+    uploadedBy,
+    overlay,
+    moderatedBy:
+      asString(moderation?.reviewedBy) ||
+      asString(existingMemeData?.moderatedBy) ||
+      approverId,
+    moderatedAt: Timestamp.fromMillis(moderatedAtMillis),
+    publishedAt: Timestamp.fromMillis(publishedAtMillis),
+    updatedAt: nowTimestamp,
+    createdAt: existingMemeData?.createdAt
+      ? undefined
+      : Timestamp.fromMillis(createdAtMillis),
+    uploadedAt: existingMemeData?.uploadedAt
+      ? undefined
+      : Timestamp.fromMillis(createdAtMillis),
+    likeCount:
+      existingLikeCount == null ? 0 : asFiniteNumber(existingLikeCount, 0),
+    shareCount:
+      existingShareCount == null ? 0 : asFiniteNumber(existingShareCount, 0),
+    downloadCount:
+      existingDownloadCount == null
+        ? 0
+        : asFiniteNumber(existingDownloadCount, 0),
+    popularityScore:
+      existingPopularityScore == null
+        ? 0
+        : asFiniteNumber(existingPopularityScore, 0),
+  };
 }
 
 export const initializeUpload = onCall<
@@ -621,6 +814,7 @@ export const approveUploadAsset = onCall<
   const assetId = requireNonEmptyString(request.data?.assetId, "assetId");
   const nowTimestamp = Timestamp.fromMillis(now);
   const assetRef = db.collection("assets").doc(assetId);
+  const memeRef = db.collection("memes").doc(assetId);
   const eventRef = assetRef.collection("events").doc();
 
   let approved = false;
@@ -632,55 +826,82 @@ export const approveUploadAsset = onCall<
       throw new HttpsError("not-found", "Asset not found.");
     }
 
-    const asset = assetSnap.data() as Partial<UploadAssetDoc>;
-    if (asset.ownerId === approverId) {
-      throw new HttpsError(
-        "permission-denied",
-        "Approver cannot approve their own upload.",
-      );
-    }
+    const assetData = assetSnap.data() as Record<string, unknown>;
+    const asset = assetData as Partial<UploadAssetDoc>;
+    const isAlreadyApproved =
+      asset.status === "published" &&
+      asset.visibility === "public" &&
+      asRecord(assetData.moderation)?.finalDecision === "approved";
 
-    if (asset.status !== "pending_review") {
+    if (asset.status !== "pending_review" && !isAlreadyApproved) {
       throw new HttpsError(
         "failed-precondition",
         "Only pending_review assets can be approved.",
       );
     }
 
-    const approvalEvent = createAssetEvent({
-      id: eventRef.id,
+    const ownerId = asString(assetData.ownerId);
+    const ownerRef = ownerId ? userRefByUid(db, ownerId) : null;
+    const [ownerSnap, memeSnap] = await Promise.all([
+      ownerRef ? tx.get(ownerRef) : Promise.resolve(null),
+      tx.get(memeRef),
+    ]);
+    const ownerData =
+      ownerSnap && ownerSnap.exists
+        ? (ownerSnap.data() as Record<string, unknown>)
+        : null;
+    const existingMemeData = memeSnap.exists
+      ? (memeSnap.data() as Record<string, unknown>)
+      : null;
+
+    const memeDoc = mapApprovedAssetToMemeDoc({
       assetId,
-      actorId: approverId,
-      type: "approved",
-      metadata: {
-        reasonCode: null,
-        fromStatus: "pending_review",
-        toStatus: "published",
-      },
+      assetData,
+      ownerData,
+      existingMemeData,
+      approverId,
       now,
     });
 
-    tx.set(
-      assetRef,
-      {
-        status: "published",
-        visibility: "public",
-        moderation: {
-          finalDecision: "approved",
-          decidedAt: nowTimestamp,
-          decidedBy: approverId,
-          reviewedAt: nowTimestamp,
-          reviewedBy: approverId,
+    if (!isAlreadyApproved) {
+      const approvalEvent = createAssetEvent({
+        id: eventRef.id,
+        assetId,
+        actorId: approverId,
+        type: "approved",
+        metadata: {
+          reasonCode: null,
+          fromStatus: "pending_review",
+          toStatus: "published",
         },
-        updatedAt: nowTimestamp,
-      },
-      { merge: true },
-    );
+        now,
+      });
 
-    tx.set(eventRef, {
-      ...approvalEvent,
-      createdAt: nowTimestamp,
-    });
+      tx.set(
+        assetRef,
+        {
+          status: "published",
+          visibility: "public",
+          moderation: {
+            finalDecision: "approved",
+            decidedAt: nowTimestamp,
+            decidedBy: approverId,
+            reviewedAt: nowTimestamp,
+            reviewedBy: approverId,
+          },
+          publishedAt: nowTimestamp,
+          updatedAt: nowTimestamp,
+        },
+        { merge: true },
+      );
+
+      tx.set(eventRef, {
+        ...approvalEvent,
+        createdAt: nowTimestamp,
+      });
+    }
+
+    tx.set(memeRef, memeDoc, { merge: true });
 
     resultingStatus = "published";
     approved = true;
