@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { CircularProgress } from "@mui/material";
 import type { UploadCardModel } from "../services/uploadCardMapper";
 import "./UploadAssetCard.css";
-import { CircularProgress } from "@mui/material";
 
 interface UploadAssetCardProps {
   item: UploadCardModel;
@@ -25,12 +25,18 @@ function formatDate(ts: number): string {
 }
 
 function workflowHint(status: string, visibility: string): string | null {
-  if (status === "published" && visibility === "public")
+  if (status === "published" && visibility === "public") {
     return "Published publicly.";
-  if (status === "pending_review")
+  }
+  if (status === "pending_review") {
     return "Submitted for review. Still private.";
-  if (status === "rejected") return "Rejected. Not public.";
-  if (status === "uploaded" && visibility === "private") return null; // default state, no hint needed
+  }
+  if (status === "rejected") {
+    return "Rejected. Not public.";
+  }
+  if (status === "uploaded" && visibility === "private") {
+    return "Private upload.";
+  }
   return null;
 }
 
@@ -49,13 +55,13 @@ export default function UploadAssetCard({
 
   const preview = item.previewUrl;
   const showPreview = Boolean(preview) && previewLoaded && !previewLoadFailed;
-  const isReviewable = item.reviewStatus === "uploaded";
+  const isReviewable =
+    item.reviewStatus === "uploaded" && item.visibility === "public";
   const hint = workflowHint(item.reviewStatus, item.visibility);
   const hasDimensions = item.width > 0 && item.height > 0;
 
   return (
     <article className="upload-card">
-      {/* ─── Preview ─── */}
       <div className="upload-card__preview">
         {preview && (
           <img
@@ -83,7 +89,6 @@ export default function UploadAssetCard({
           </div>
         )}
 
-        {/* ─── Status & visibility badges ─── */}
         <div className="upload-card__badges">
           <span
             className={`upload-card__badge upload-card__badge--${item.reviewStatus}`}
@@ -98,7 +103,6 @@ export default function UploadAssetCard({
         </div>
       </div>
 
-      {/* ─── Body ─── */}
       <div className="upload-card__body">
         <h3 className="upload-card__title">
           {item.title || `Untitled upload (${item.id.slice(0, 8)})`}
@@ -110,7 +114,7 @@ export default function UploadAssetCard({
             <>
               <span className="upload-card__meta-sep" />
               <span>
-                {item.width}×{item.height}
+                {item.width}x{item.height}
               </span>
             </>
           )}
@@ -121,7 +125,6 @@ export default function UploadAssetCard({
         {hint && <p className="upload-card__hint">{hint}</p>}
       </div>
 
-      {/* ─── Actions ─── */}
       {isReviewable && (
         <div className="upload-card__actions">
           <button
@@ -130,7 +133,7 @@ export default function UploadAssetCard({
             disabled={submitting}
             onClick={() => onSubmitForReview(item.id)}
           >
-            {submitting ? "Submitting…" : "Submit for review"}
+            {submitting ? "Submitting..." : "Submit for review"}
           </button>
         </div>
       )}

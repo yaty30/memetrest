@@ -172,8 +172,8 @@ export default function MyUploadsPage() {
                   mb: 2.5,
                 }}
               >
-                Manage your uploaded assets. Uploads are private until reviewed
-                and published.
+                Manage your uploaded assets. Public uploads stay private until
+                reviewed and published. Private uploads remain private.
               </Typography>
 
               <MyUploadsView items={items} loading={loading} error={error} />
