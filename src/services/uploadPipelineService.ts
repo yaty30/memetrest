@@ -69,6 +69,27 @@ interface SubmitAssetForReviewResponse {
   submitted: boolean;
 }
 
+interface ApproveUploadAssetRequest {
+  assetId: string;
+}
+
+interface ApproveUploadAssetResponse {
+  assetId: string;
+  status: "uploaded" | "pending_review" | "published" | "rejected" | "removed";
+  approved: boolean;
+}
+
+interface RejectUploadAssetRequest {
+  assetId: string;
+  reason?: string | null;
+}
+
+interface RejectUploadAssetResponse {
+  assetId: string;
+  status: "uploaded" | "pending_review" | "published" | "rejected" | "removed";
+  rejected: boolean;
+}
+
 export interface UploadAssetMetadataInput {
   title: string;
   description?: string | null;
@@ -105,6 +126,10 @@ export type UserUploadsVisibility = "owner" | "public";
 
 interface UserUploadsQueryOptions {
   visibility?: UserUploadsVisibility;
+  pageSize?: number;
+}
+
+interface PendingReviewQueryOptions {
   pageSize?: number;
 }
 
@@ -464,6 +489,37 @@ export function subscribeToUserUploadAssets(
   );
 }
 
+export function subscribeToPendingReviewUploads(
+  onData: (items: UploadAssetDoc[]) => void,
+  onError?: (error: Error) => void,
+  options: PendingReviewQueryOptions = {},
+): Unsubscribe {
+  const { pageSize = 200 } = options;
+  const assetsRef = collection(db, "assets");
+  const approvalsQuery = query(
+    assetsRef,
+    where("status", "==", "pending_review"),
+    orderBy("createdAt", "desc"),
+    limit(pageSize),
+  );
+
+  return onSnapshot(
+    approvalsQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((docSnap) => {
+        const raw = docSnap.data() as Record<string, unknown>;
+        return toUploadAssetDoc(docSnap.id, raw);
+      });
+      onData(items);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+  );
+}
+
 export async function initializeUpload(
   input: InitializeUploadRequest,
 ): Promise<InitializeUploadResponse> {
@@ -506,6 +562,36 @@ export async function submitAssetForReview(
     return result.data;
   } catch (error) {
     throw toCallableError("submitAssetForReview", error);
+  }
+}
+
+export async function approveUploadAsset(
+  input: ApproveUploadAssetRequest,
+): Promise<ApproveUploadAssetResponse> {
+  try {
+    const callable = httpsCallable<
+      ApproveUploadAssetRequest,
+      ApproveUploadAssetResponse
+    >(functionsClient, "approveUploadAsset");
+    const result = await callable(input);
+    return result.data;
+  } catch (error) {
+    throw toCallableError("approveUploadAsset", error);
+  }
+}
+
+export async function rejectUploadAsset(
+  input: RejectUploadAssetRequest,
+): Promise<RejectUploadAssetResponse> {
+  try {
+    const callable = httpsCallable<
+      RejectUploadAssetRequest,
+      RejectUploadAssetResponse
+    >(functionsClient, "rejectUploadAsset");
+    const result = await callable(input);
+    return result.data;
+  } catch (error) {
+    throw toCallableError("rejectUploadAsset", error);
   }
 }
 

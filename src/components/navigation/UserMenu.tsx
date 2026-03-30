@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
@@ -27,18 +28,6 @@ import { signOut } from "../../services/authService";
 import SignInDialog from "../SignInDialog";
 import { useCanUpload } from "../../hooks/useCanUpload";
 
-const MENU_ITEMS = [
-  { label: "Upload", icon: <CloudUploadOutlinedIcon fontSize="small" /> },
-  {
-    label: "My Uploads",
-    icon: <Inventory2OutlinedIcon fontSize="small" />,
-  },
-  { label: "Profile", icon: <PersonOutlineIcon fontSize="small" /> },
-  { label: "Favorites", icon: <FavoriteBorderIcon fontSize="small" /> },
-  { label: "Settings", icon: <SettingsOutlinedIcon fontSize="small" /> },
-  { label: "Logout", icon: <LogoutIcon fontSize="small" />, divider: true },
-] as const;
-
 export default function UserMenu() {
   const { firebaseUser, loading } = useAuth();
   const uploadPermission = useCanUpload();
@@ -49,6 +38,26 @@ export default function UserMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [signInOpen, setSignInOpen] = useState(false);
   const open = Boolean(anchorEl);
+  const isAdmin = userProfile?.role === "admin";
+  const menuItems = [
+    { label: "Upload", icon: <CloudUploadOutlinedIcon fontSize="small" /> },
+    {
+      label: "My Uploads",
+      icon: <Inventory2OutlinedIcon fontSize="small" />,
+    },
+    ...(isAdmin
+      ? [
+          {
+            label: "Pending Approvals",
+            icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />,
+          },
+        ]
+      : []),
+    { label: "Profile", icon: <PersonOutlineIcon fontSize="small" /> },
+    { label: "Favorites", icon: <FavoriteBorderIcon fontSize="small" /> },
+    { label: "Settings", icon: <SettingsOutlinedIcon fontSize="small" /> },
+    { label: "Logout", icon: <LogoutIcon fontSize="small" />, divider: true },
+  ];
 
   const handleMenuAction = async (label: string) => {
     setAnchorEl(null);
@@ -62,6 +71,8 @@ export default function UserMenu() {
       await signOut();
     } else if (label === "My Uploads") {
       navigate("/my-uploads");
+    } else if (label === "Pending Approvals") {
+      navigate("/admin/approvals");
     } else if (label === "Profile") {
       navigate("/profile");
     }
@@ -184,7 +195,7 @@ export default function UserMenu() {
           },
         }}
       >
-        {MENU_ITEMS.map((item) => (
+        {menuItems.map((item) => (
           <MenuItem
             key={item.label}
             onClick={() => handleMenuAction(item.label)}
