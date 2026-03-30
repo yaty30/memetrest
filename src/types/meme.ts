@@ -37,7 +37,7 @@ export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
 export const MAX_STATIC_SIZE = 10 * 1024 * 1024; // 10 MB
 export const MAX_GIF_SIZE = 8 * 1024 * 1024; // 8 MB
 
-/** Core meme data model — maps 1:1 to a Firestore document. */
+/** Core meme data model that maps 1:1 to a Firestore document. */
 export interface Meme {
   id: string;
   title: string;
@@ -68,6 +68,7 @@ export interface Meme {
 
   // Engagement
   likeCount: number;
+  viewerHasLiked?: boolean;
   shareCount: number;
   downloadCount: number;
   popularityScore: number;
