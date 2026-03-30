@@ -15,8 +15,11 @@
     "backfill:image-dimensions:fix": "node scripts/backfillFirestoreIntrinsicDimensions.mjs --fix",
     "backfill:meme-search-keywords": "npx tsx scripts/backfillMemeSearchKeywords.ts",
     "backfill:meme-search-keywords:fix": "npx tsx scripts/backfillMemeSearchKeywords.ts --apply",
+    "backfill:meme-like-count": "npx tsx scripts/backfillMemeLikeCount.ts",
+    "backfill:meme-like-count:fix": "npx tsx scripts/backfillMemeLikeCount.ts --apply",
     "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts",
-    "deploy": "npx firebase-tools deploy --project memetrest-b57dc"
+    "deploy": "npx firebase-tools deploy --project memetrest-b57dc",
+    "golive": "npx firebase-tools deploy --only hosting --project memetrest-b57dc"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

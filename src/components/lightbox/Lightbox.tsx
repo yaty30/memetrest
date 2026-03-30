@@ -12,6 +12,8 @@ import LightboxImagePane from "./LightboxImagePane";
 import LightboxSidebar from "./LightboxSidebar";
 import ActionItem from "../ActionItem";
 import { memeService } from "../../services";
+import SignInDialog from "../SignInDialog";
+import { useMemeLike } from "../../hooks/useMemeLike";
 
 /** Seed comments so the UI isn't empty on first open. */
 function makeSeedComments(): Comment[] {
@@ -50,7 +52,17 @@ export default function Lightbox({
   const displayItem = currentItem ?? item;
 
   const [comments, setComments] = useState<Comment[]>(makeSeedComments);
-  const [liked, setLiked] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const {
+    viewerHasLiked,
+    likeCount,
+    handleLike,
+  } = useMemeLike({
+    memeId: displayItem?.id ?? null,
+    initialLikeCount: displayItem?.likeCount ?? 0,
+    initialViewerHasLiked: displayItem?.viewerHasLiked,
+    onAuthRequired: () => setSignInOpen(true),
+  });
 
   const handleAddComment = useCallback((text: string) => {
     const newComment: Comment = {
@@ -98,16 +110,8 @@ export default function Lightbox({
     }
   }, [displayItem]);
 
-  const handleLike = useCallback(() => {
-    setLiked((v) => !v);
-    if (!liked && displayItem) {
-      memeService.incrementCounter(displayItem.id, "likeCount").catch(() => {});
-    }
-  }, [liked, displayItem]);
-
   const handleRelatedSelect = useCallback((meme: Meme) => {
     setCurrentItem(meme);
-    setLiked(false);
   }, []);
 
   const actionBar = useMemo(
@@ -117,16 +121,17 @@ export default function Lightbox({
         <ActionItem icon={Share2} label="Share" onClick={handleShare} />
         <ActionItem
           icon={Heart}
-          label={liked ? "Liked" : "Like"}
+          label={viewerHasLiked ? "Liked" : "Like"}
           onClick={handleLike}
         />
         <ActionItem icon={MessageCircle} label="Comment" />
       </>
     ),
-    [handleDownload, handleShare, handleLike, liked],
+    [handleDownload, handleShare, handleLike, viewerHasLiked],
   );
 
   if (!displayItem) return null;
+  const displayLikeCount = likeCount;
 
   return (
     <Dialog
@@ -204,7 +209,7 @@ export default function Lightbox({
           actions={isMobile ? undefined : actionBar}
         />
         <LightboxSidebar
-          item={displayItem}
+          item={{ ...displayItem, viewerHasLiked, likeCount: displayLikeCount }}
           comments={comments}
           onAddComment={handleAddComment}
           actionsSlot={isMobile ? actionBar : undefined}
@@ -216,6 +221,7 @@ export default function Lightbox({
           onRelatedSelect={handleRelatedSelect}
         />
       </Box>
+      <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </Dialog>
   );
 }

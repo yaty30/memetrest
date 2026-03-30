@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import type { UserProfile } from "../types/user";
 import { getUserByUsername } from "../services/userService";
@@ -9,6 +9,8 @@ interface ProfileData {
   loading: boolean;
   isOwnProfile: boolean;
   notFound: boolean;
+  signedIn: boolean;
+  profileError: string | null;
 }
 
 /**
@@ -18,14 +20,18 @@ interface ProfileData {
  * - Other username → fetches from Firestore via the usernames collection.
  */
 export function useProfileData(username?: string): ProfileData {
-  const { firebaseUser, loading: authLoading } = useAuth();
-  const { profile: currentUserProfile, status: currentProfileStatus } =
-    useAppSelector((state) => state.currentUserProfile);
+  const { firebaseUser, loading: authLoading, refreshProfile } = useAuth();
+  const {
+    profile: currentUserProfile,
+    status: currentProfileStatus,
+    error: currentProfileError,
+  } = useAppSelector((state) => state.currentUserProfile);
   const [fetchedProfile, setFetchedProfile] = useState<UserProfile | null>(
     null,
   );
   const [fetchLoading, setFetchLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const ownProfileRetryUidRef = useRef<string | null>(null);
 
   const isOwnProfile =
     !username ||
@@ -70,6 +76,25 @@ export function useProfileData(username?: string): ProfileData {
     };
   }, [username, isOwnProfile, awaitingOwnProfileResolution]);
 
+  useEffect(() => {
+    if (username) return;
+    if (!firebaseUser || currentUserProfile) {
+      ownProfileRetryUidRef.current = null;
+      return;
+    }
+    if (currentProfileStatus !== "error") return;
+    if (ownProfileRetryUidRef.current === firebaseUser.uid) return;
+
+    ownProfileRetryUidRef.current = firebaseUser.uid;
+    void refreshProfile();
+  }, [
+    currentProfileStatus,
+    currentUserProfile,
+    firebaseUser,
+    refreshProfile,
+    username,
+  ]);
+
   if (!username || isOwnProfile) {
     // If the profile is already hydrated in Redux, return it immediately
     // without waiting for auth to re-settle. Banner, avatar, name, bio etc.
@@ -88,6 +113,11 @@ export function useProfileData(username?: string): ProfileData {
       loading: currentUserLoading,
       isOwnProfile: true,
       notFound: false,
+      signedIn: !!firebaseUser,
+      profileError:
+        !!firebaseUser && currentProfileStatus === "error"
+          ? currentProfileError ?? "Failed to load profile"
+          : null,
     };
   }
 
@@ -97,6 +127,8 @@ export function useProfileData(username?: string): ProfileData {
       loading: true,
       isOwnProfile: false,
       notFound: false,
+      signedIn: !!firebaseUser,
+      profileError: null,
     };
   }
 
@@ -105,5 +137,7 @@ export function useProfileData(username?: string): ProfileData {
     loading: fetchLoading,
     isOwnProfile: false,
     notFound,
+    signedIn: !!firebaseUser,
+    profileError: null,
   };
 }

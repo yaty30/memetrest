@@ -12,6 +12,8 @@ interface ProfileViewProps {
   loading: boolean;
   isOwnProfile: boolean;
   notFound: boolean;
+  signedIn: boolean;
+  profileError: string | null;
   onBack?: () => void;
 }
 
@@ -60,6 +62,8 @@ export default function ProfileView({
   loading,
   isOwnProfile,
   notFound,
+  signedIn,
+  profileError,
   onBack,
 }: ProfileViewProps) {
   const {
@@ -105,6 +109,20 @@ export default function ProfileView({
   }
 
   if (!profile) {
+    if (signedIn) {
+      return (
+        <StatusPane
+          icon={<PersonOffOutlinedIcon sx={{ fontSize: 44 }} />}
+          title="We couldn't load your profile"
+          subtitle={
+            profileError
+              ? `Signed in, but profile hydration failed: ${profileError}`
+              : "Signed in, but your profile is not available right now. Please refresh and try again."
+          }
+        />
+      );
+    }
+
     return (
       <StatusPane
         icon={<LockOutlinedIcon sx={{ fontSize: 44 }} />}

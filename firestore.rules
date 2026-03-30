@@ -53,7 +53,8 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role
         && request.resource.data.status == resource.data.status
         // Upload enforcement fields are backend-authoritative in this phase.
-        && request.resource.data.uploadProfile == resource.data.uploadProfile;
+        // Use .get() with a default so the rule is safe when the field doesn't exist yet.
+        && request.resource.data.get('uploadProfile', null) == resource.data.get('uploadProfile', null);
 
       // Admin can change any field (including role/status)
       allow update: if isAdmin();
@@ -102,12 +103,24 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && userIsActive()
         && request.resource.data.status == 'pending'
-        && request.resource.data.uploadedBy == request.auth.uid;
+        && request.resource.data.uploadedBy == request.auth.uid
+        && request.resource.data.likeCount is int
+        && request.resource.data.likeCount == 0;
 
-      // Only moderators/admins can change the status (approve/reject).
-      allow update: if isModerator();
+      // Only moderators/admins can update memes, but engagement counters stay
+      // backend-authoritative (mutated via callable/Admin SDK only).
+      allow update: if isModerator()
+        && request.resource.data.likeCount is int
+        && request.resource.data.likeCount >= 0
+        && request.resource.data.likeCount == resource.data.likeCount;
 
       allow delete: if isAdmin();
+    }
+
+    // memeLikes are backend-authored relation docs (callable/Admin SDK writes).
+    match /memeLikes/{likeId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     // ── assets/{assetId} ───────────────────────────────────────────────

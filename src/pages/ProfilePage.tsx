@@ -18,7 +18,8 @@ import {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
-  const { profile, loading, isOwnProfile, notFound } = useProfileData(username);
+  const { profile, loading, isOwnProfile, notFound, signedIn, profileError } =
+    useProfileData(username);
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -88,6 +89,8 @@ export default function ProfilePage() {
             loading={loading}
             isOwnProfile={isOwnProfile}
             notFound={notFound}
+            signedIn={signedIn}
+            profileError={profileError}
             onBack={handleBack}
           />
         </Box>
