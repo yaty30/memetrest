@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -66,6 +67,13 @@ export default function ProfileView({
   profileError,
   onBack,
 }: ProfileViewProps) {
+  const [headerCollapse, setHeaderCollapse] = useState(0);
+
+  const handleTabScroll = useCallback((scrollTop: number) => {
+    const next = Math.max(0, Math.min(scrollTop / 140, 1));
+    setHeaderCollapse((prev) => (Math.abs(prev - next) < 0.01 ? prev : next));
+  }, []);
+
   const {
     totalCount,
     publishedCount,
@@ -133,7 +141,15 @@ export default function ProfileView({
   }
 
   return (
-    <Box>
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <ProfileHeader
         profile={profile}
         isOwnProfile={isOwnProfile}
@@ -141,8 +157,13 @@ export default function ProfileView({
         uploadCountLoading={uploadsLoading}
         uploadCountError={uploadsError}
         onBack={onBack}
+        collapseProgress={headerCollapse}
       />
-      <ProfileTabs profile={profile} isOwnProfile={isOwnProfile} />
+      <ProfileTabs
+        profile={profile}
+        isOwnProfile={isOwnProfile}
+        onContentScroll={handleTabScroll}
+      />
     </Box>
   );
 }

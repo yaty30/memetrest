@@ -4,11 +4,13 @@ import { BAR_WIDTH } from "./ProfileHeader.constants";
 interface ProfileHeaderBioProps {
   bio?: string;
   isOwnProfile: boolean;
+  collapseProgress?: number;
 }
 
 export default function ProfileHeaderBio({
   bio,
   isOwnProfile,
+  collapseProgress = 0,
 }: ProfileHeaderBioProps) {
   if (!bio && !isOwnProfile) return null;
 
@@ -20,6 +22,11 @@ export default function ProfileHeaderBio({
         px: { xs: 1.5, sm: 2, md: 3 },
         pt: 0.75,
         pb: 0.25,
+        maxHeight: `${Math.round(76 * (1 - collapseProgress))}px`,
+        opacity: Math.max(0, 1 - collapseProgress * 1.6),
+        transform: `translateY(-${Math.round(collapseProgress * 8)}px)`,
+        overflow: "hidden",
+        transition: "max-height 200ms ease, opacity 160ms ease, transform 200ms ease",
       }}
     >
       {bio ? (

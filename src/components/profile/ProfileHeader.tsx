@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { UserProfile } from "../../types/user";
 import AssetPickerDialog from "./AssetPickerDialog";
 import EditProfileDialog from "./EditProfileDialog";
@@ -14,6 +14,7 @@ interface ProfileHeaderProps {
   uploadCount: number;
   uploadCountLoading: boolean;
   uploadCountError: string | null;
+  collapseProgress?: number;
   loading?: boolean;
   onBack?: () => void;
 }
@@ -24,9 +25,13 @@ export default function ProfileHeader({
   uploadCount,
   uploadCountLoading,
   uploadCountError,
+  collapseProgress = 0,
   loading,
   onBack,
 }: ProfileHeaderProps) {
+  const theme = useTheme();
+  const smUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const mdUp = useMediaQuery(theme.breakpoints.up("md"));
   const [bannerError, setBannerError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -45,17 +50,30 @@ export default function ProfileHeader({
 
   const bannerUrl = profile.banner?.url;
   const showBanner = Boolean(bannerUrl) && !bannerError;
+  const bannerExpandedHeight = mdUp ? 400 : smUp ? 180 : 140;
+  const bannerCollapsedHeight = mdUp ? 132 : smUp ? 104 : 84;
+  const bannerHeight =
+    bannerExpandedHeight -
+    (bannerExpandedHeight - bannerCollapsedHeight) * collapseProgress;
 
   return (
-    <Box>
-      <ProfileHeaderBanner
-        bannerUrl={bannerUrl}
-        showBanner={showBanner}
-        isOwnProfile={isOwnProfile}
-        onBack={onBack}
-        onBannerError={() => setBannerError(true)}
-        onChangeBanner={() => setBannerPickerOpen(true)}
-      />
+    <Box sx={{ flexShrink: 0, overflow: "hidden" }}>
+      <Box
+        sx={{
+          height: `${Math.round(bannerHeight)}px`,
+          overflow: "hidden",
+          transition: "height 220ms ease",
+        }}
+      >
+        <ProfileHeaderBanner
+          bannerUrl={bannerUrl}
+          showBanner={showBanner}
+          isOwnProfile={isOwnProfile}
+          onBack={onBack}
+          onBannerError={() => setBannerError(true)}
+          onChangeBanner={() => setBannerPickerOpen(true)}
+        />
+      </Box>
 
       <ProfileHeaderBar
         profile={profile}
@@ -72,9 +90,14 @@ export default function ProfileHeader({
         onShareProfile={() =>
           navigator.clipboard.writeText(window.location.href)
         }
+        collapseProgress={collapseProgress}
       />
 
-      <ProfileHeaderBio bio={profile.bio} isOwnProfile={isOwnProfile} />
+      <ProfileHeaderBio
+        bio={profile.bio}
+        isOwnProfile={isOwnProfile}
+        collapseProgress={collapseProgress}
+      />
 
       {isOwnProfile && (
         <>
