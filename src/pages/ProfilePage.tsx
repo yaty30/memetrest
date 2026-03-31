@@ -32,9 +32,10 @@ export default function ProfilePage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100dvh",
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {/* Navbar */}
@@ -57,6 +58,7 @@ export default function ProfilePage() {
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           width: "100%",
           maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
@@ -64,11 +66,17 @@ export default function ProfilePage() {
           pt: PAGE_CONTENT_PADDING_TOP,
           pb: PAGE_CONTENT_PADDING_BOTTOM,
           boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Box
           component="main"
           sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
             bgcolor: "background.paper",
             borderRadius: { xs: 0, sm: "14px" },
             overflow: "hidden",

@@ -34,7 +34,7 @@ export default function MyUploadsPage() {
   return (
     <Box
       sx={{
-        height: "100vh",
+        height: "100dvh",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -196,7 +196,15 @@ export default function MyUploadsPage() {
                 reviewed and published. Private uploads remain private.
               </Typography>
 
-              <Box className="gallery-scroll" sx={{ flex: 1, minHeight: 0 }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  pb: "max(24px, env(safe-area-inset-bottom))",
+                }}
+              >
                 <MyUploadsView items={items} loading={loading} error={error} />
               </Box>
             </Box>
