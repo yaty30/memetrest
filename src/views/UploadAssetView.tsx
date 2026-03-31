@@ -165,7 +165,17 @@ export default function UploadAssetView() {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      noValidate
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -175,224 +185,235 @@ export default function UploadAssetView() {
       />
 
       <Box
-        sx={(theme) => ({
-          borderRadius: "14px",
-          border: `1px solid ${theme.palette.divider}`,
-          p: { xs: 2, sm: 2.5 },
-        })}
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          pr: 0.25,
+          pb: "max(20px, env(safe-area-inset-bottom))",
+        }}
       >
         <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              md: "minmax(0, 1.3fr) minmax(0, 1fr)",
-            },
-            gap: 2,
-          }}
+          sx={(theme) => ({
+            borderRadius: "14px",
+            border: `1px solid ${theme.palette.divider}`,
+            p: { xs: 2, sm: 2.5 },
+          })}
         >
           <Box
-            onClick={handleChooseFile}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                handleChooseFile();
-              }
-            }}
-            sx={(theme) => ({
-              width: "100%",
-              aspectRatio: "4 / 3",
-              borderRadius: "12px",
-              border: `1px dashed ${theme.palette.divider}`,
-              bgcolor: "surface.input",
-              overflow: "hidden",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "border-color 0.2s ease, background-color 0.2s ease",
-              "&:hover": {
-                borderColor: "primary.main",
-                bgcolor: "surface.inputHover",
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "minmax(0, 1.3fr) minmax(0, 1fr)",
               },
-            })}
+              gap: 2,
+            }}
           >
-            {previewUrl ? (
-              <Box
-                component="img"
-                src={previewUrl}
-                alt={name.trim() || "Upload preview"}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  bgcolor: "rgba(0,0,0,0.25)",
-                }}
-              />
-            ) : (
-              <Stack spacing={0.5} sx={{ textAlign: "center", px: 2 }}>
-                <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>
-                  Click to upload image
-                </Typography>
-                <Typography
-                  sx={{ fontSize: "0.75rem", color: "text.secondary" }}
-                >
-                  JPEG, PNG, WebP, GIF
-                </Typography>
-              </Stack>
-            )}
-          </Box>
-
-          <Stack spacing={2.25}>
-            <Box>
-              <Typography
-                component="label"
-                sx={{
-                  display: "block",
-                  mb: 0.75,
-                  fontSize: "0.75rem",
-                  color: "text.secondary",
-                }}
-              >
-                Visibility
-              </Typography>
-              <Tabs
-                value={visibility}
-                onChange={(_event, next: UploadAssetVisibility) =>
-                  setVisibility(next)
-                }
-                variant="fullWidth"
-                sx={(theme) => ({
-                  minHeight: 36,
-                  borderRadius: "10px",
-                  bgcolor: "surface.input",
-                  border: `1px solid ${theme.palette.divider}`,
-                  "& .MuiTab-root": {
-                    minHeight: 34,
-                    fontSize: "0.8125rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                  },
-                  "& .MuiTabs-indicator": {
-                    height: "100%",
-                    borderRadius: "8px",
-                    backgroundColor: theme.palette.action.hover,
-                    zIndex: 0,
-                  },
-                  "& .MuiTabs-flexContainer": {
-                    position: "relative",
-                    zIndex: 1,
-                  },
-                })}
-              >
-                <Tab value="private" label="Private" />
-                <Tab value="public" label="Public" />
-              </Tabs>
-            </Box>
-            <TextField
-              label="Name"
-              value={name}
-              required
-              onChange={(event) => setName(event.target.value)}
-              size="small"
-              fullWidth
-            />
-            <TextField
-              label="Source"
-              value={source}
-              onChange={(event) => setSource(event.target.value)}
-              size="small"
-              fullWidth
-            />
             <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" },
-                gap: 1.25,
-                alignItems: "center",
+              onClick={handleChooseFile}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleChooseFile();
+                }
               }}
+              sx={(theme) => ({
+                width: "100%",
+                aspectRatio: "4 / 3",
+                borderRadius: "12px",
+                border: `1px dashed ${theme.palette.divider}`,
+                bgcolor: "surface.input",
+                overflow: "hidden",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "border-color 0.2s ease, background-color 0.2s ease",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "surface.inputHover",
+                },
+              })}
             >
-              <TextField
-                label="Tags"
-                value={tagInput}
-                onChange={(event) => setTagInput(event.target.value)}
-                onBlur={commitTagInput}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === ",") {
-                    event.preventDefault();
-                    commitTagInput();
-                  }
-                }}
-                size="small"
-                fullWidth
-                placeholder="funny, reaction, classic"
-              />
-              <Tooltip
-                title="Add a tag and press Enter, or paste multiple tags separated by commas."
-                arrow
-                placement="top"
-              >
-                <IconButton
-                  size="small"
-                  aria-label="Tag input help"
+              {previewUrl ? (
+                <Box
+                  component="img"
+                  src={previewUrl}
+                  alt={name.trim() || "Upload preview"}
                   sx={{
-                    justifySelf: { xs: "start", sm: "end" },
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    bgcolor: "rgba(0,0,0,0.25)",
+                  }}
+                />
+              ) : (
+                <Stack spacing={0.5} sx={{ textAlign: "center", px: 2 }}>
+                  <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                    Click to upload image
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.75rem", color: "text.secondary" }}
+                  >
+                    JPEG, PNG, WebP, GIF
+                  </Typography>
+                </Stack>
+              )}
+            </Box>
+
+            <Stack spacing={2.25}>
+              <Box>
+                <Typography
+                  component="label"
+                  sx={{
+                    display: "block",
+                    mb: 0.75,
+                    fontSize: "0.75rem",
                     color: "text.secondary",
                   }}
                 >
-                  <InfoOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-            {tags.length > 0 && (
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                {tags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
+                  Visibility
+                </Typography>
+                <Tabs
+                  value={visibility}
+                  onChange={(_event, next: UploadAssetVisibility) =>
+                    setVisibility(next)
+                  }
+                  variant="fullWidth"
+                  sx={(theme) => ({
+                    minHeight: 36,
+                    borderRadius: "10px",
+                    bgcolor: "surface.input",
+                    border: `1px solid ${theme.palette.divider}`,
+                    "& .MuiTab-root": {
+                      minHeight: 34,
+                      fontSize: "0.8125rem",
+                      fontWeight: 600,
+                      textTransform: "none",
+                    },
+                    "& .MuiTabs-indicator": {
+                      height: "100%",
+                      borderRadius: "8px",
+                      backgroundColor: theme.palette.action.hover,
+                      zIndex: 0,
+                    },
+                    "& .MuiTabs-flexContainer": {
+                      position: "relative",
+                      zIndex: 1,
+                    },
+                  })}
+                >
+                  <Tab value="private" label="Private" />
+                  <Tab value="public" label="Public" />
+                </Tabs>
+              </Box>
+              <TextField
+                label="Name"
+                value={name}
+                required
+                onChange={(event) => setName(event.target.value)}
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="Source"
+                value={source}
+                onChange={(event) => setSource(event.target.value)}
+                size="small"
+                fullWidth
+              />
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" },
+                  gap: 1.25,
+                  alignItems: "center",
+                }}
+              >
+                <TextField
+                  label="Tags"
+                  value={tagInput}
+                  onChange={(event) => setTagInput(event.target.value)}
+                  onBlur={commitTagInput}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === ",") {
+                      event.preventDefault();
+                      commitTagInput();
+                    }
+                  }}
+                  size="small"
+                  fullWidth
+                  placeholder="funny, reaction, classic"
+                />
+                <Tooltip
+                  title="Add a tag and press Enter, or paste multiple tags separated by commas."
+                  arrow
+                  placement="top"
+                >
+                  <IconButton
                     size="small"
-                    onDelete={() => handleRemoveTag(tag)}
-                  />
-                ))}
-              </Stack>
-            )}
-          </Stack>
+                    aria-label="Tag input help"
+                    sx={{
+                      justifySelf: { xs: "start", sm: "end" },
+                      color: "text.secondary",
+                    }}
+                  >
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              {tags.length > 0 && (
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {tags.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      size="small"
+                      onDelete={() => handleRemoveTag(tag)}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={!canSubmit}
+            sx={{ mt: 2 }}
+          >
+            {submitting
+              ? "Submitting..."
+              : visibility === "public"
+                ? "Upload and submit for review"
+                : "Upload privately"}
+          </Button>
         </Box>
 
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={!canSubmit}
-          sx={{ mt: 2 }}
-        >
-          {submitting
-            ? "Submitting..."
-            : visibility === "public"
-              ? "Upload and submit for review"
-              : "Upload privately"}
-        </Button>
+        {!uploadPermission.allowed && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {uploadPermission.reason ?? "You cannot upload right now."}
+          </Alert>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            {success}
+          </Alert>
+        )}
       </Box>
-
-      {!uploadPermission.allowed && (
-        <Alert severity="warning" sx={{ mt: 2 }}>
-          {uploadPermission.reason ?? "You cannot upload right now."}
-        </Alert>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          {success}
-        </Alert>
-      )}
     </Box>
   );
 }

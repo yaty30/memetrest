@@ -16,6 +16,10 @@ export interface UseProfileUploadsReturn extends ProfileUploadsState {
   loadMore: () => void;
 }
 
+type InternalProfileUploadsState = Omit<ProfileUploadsState, "loading"> & {
+  key: string | null;
+};
+
 /**
  * Fetches memes uploaded by a specific user, newest first, with cursor pagination.
  *
@@ -27,9 +31,10 @@ export function useProfileUploads(
   ownerUid: string | undefined,
   isOwnProfile: boolean,
 ): UseProfileUploadsReturn {
-  const [state, setState] = useState<ProfileUploadsState>({
+  const queryKey = ownerUid ? `${ownerUid}:${isOwnProfile ? "owner" : "public"}` : null;
+  const [state, setState] = useState<InternalProfileUploadsState>({
+    key: null,
     items: [],
-    loading: true,
     loadingMore: false,
     hasMore: false,
     error: null,
@@ -41,28 +46,15 @@ export function useProfileUploads(
 
   // Reset + fetch first page when ownerUid or visibility scope changes
   useEffect(() => {
-    if (!ownerUid) {
-      setState({
-        items: [],
-        loading: false,
-        loadingMore: false,
-        hasMore: false,
-        error: null,
-      });
+    if (!ownerUid || !queryKey) {
+      cursorRef.current = null;
+      loadingMoreRef.current = false;
       return;
     }
 
     const gen = ++generationRef.current;
     cursorRef.current = null;
     loadingMoreRef.current = false;
-
-    setState({
-      items: [],
-      loading: true,
-      loadingMore: false,
-      hasMore: false,
-      error: null,
-    });
 
     memeService
       .queryMemesByOwner({
@@ -73,8 +65,8 @@ export function useProfileUploads(
       .then((result) => {
         if (gen !== generationRef.current) return;
         setState({
+          key: queryKey,
           items: result.items,
-          loading: false,
           loadingMore: false,
           hasMore: result.hasMore,
           error: null,
@@ -84,22 +76,26 @@ export function useProfileUploads(
       .catch((err) => {
         if (gen !== generationRef.current) return;
         setState({
+          key: queryKey,
           items: [],
-          loading: false,
           loadingMore: false,
           hasMore: false,
           error: err instanceof Error ? err.message : "Failed to load uploads",
         });
       });
-  }, [ownerUid, isOwnProfile]);
+  }, [ownerUid, isOwnProfile, queryKey]);
 
   const loadMore = useCallback(() => {
-    if (!ownerUid || !cursorRef.current || loadingMoreRef.current) return;
+    if (!ownerUid || !queryKey || !cursorRef.current || loadingMoreRef.current) {
+      return;
+    }
 
     const gen = generationRef.current;
     loadingMoreRef.current = true;
 
-    setState((prev) => ({ ...prev, loadingMore: true, error: null }));
+    setState((prev) =>
+      prev.key !== queryKey ? prev : { ...prev, loadingMore: true, error: null },
+    );
 
     memeService
       .queryMemesByOwner({
@@ -111,6 +107,7 @@ export function useProfileUploads(
       .then((result) => {
         if (gen !== generationRef.current) return;
         setState((prev) => {
+          if (prev.key !== queryKey) return prev;
           const existingIds = new Set(prev.items.map((m) => m.id));
           const newItems = result.items.filter((m) => !existingIds.has(m.id));
           return {
@@ -125,16 +122,40 @@ export function useProfileUploads(
       })
       .catch((err) => {
         if (gen !== generationRef.current) return;
-        setState((prev) => ({
-          ...prev,
-          loadingMore: false,
-          error: err instanceof Error ? err.message : "Failed to load more",
-        }));
+        setState((prev) =>
+          prev.key !== queryKey
+            ? prev
+            : {
+                ...prev,
+                loadingMore: false,
+                error: err instanceof Error ? err.message : "Failed to load more",
+              },
+        );
       })
       .finally(() => {
         loadingMoreRef.current = false;
       });
-  }, [ownerUid, isOwnProfile]);
+  }, [ownerUid, isOwnProfile, queryKey]);
 
-  return { ...state, loadMore };
+  if (!queryKey) {
+    return {
+      items: [],
+      loading: false,
+      loadingMore: false,
+      hasMore: false,
+      error: null,
+      loadMore,
+    };
+  }
+
+  const keyMatches = state.key === queryKey;
+
+  return {
+    items: keyMatches ? state.items : [],
+    loading: !keyMatches,
+    loadingMore: keyMatches ? state.loadingMore : false,
+    hasMore: keyMatches ? state.hasMore : false,
+    error: keyMatches ? state.error : null,
+    loadMore,
+  };
 }

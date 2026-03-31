@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
@@ -11,11 +11,13 @@ import type { Meme } from "../../types/meme";
 interface ProfileUploadsTabProps {
   ownerUid: string;
   isOwnProfile: boolean;
+  scrollRootRef?: RefObject<Element | null>;
 }
 
 export default function ProfileUploadsTab({
   ownerUid,
   isOwnProfile,
+  scrollRootRef,
 }: ProfileUploadsTabProps) {
   const navigate = useNavigate();
   const { items, loading, loadingMore, hasMore, error, loadMore } =
@@ -37,11 +39,11 @@ export default function ProfileUploadsTab({
       (entries) => {
         if (entries[0].isIntersecting) loadMore();
       },
-      { rootMargin: "300px" },
+      { root: scrollRootRef?.current ?? null, rootMargin: "300px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, loadMore, scrollRootRef]);
 
   if (loading) {
     return (
@@ -82,7 +84,7 @@ export default function ProfileUploadsTab({
   }
 
   return (
-    <Box sx={{ mx: { xs: -2, sm: -3, md: -5 } }}>
+    <Box sx={{ minHeight: 600, mx: { xs: -2, sm: -3, md: -5, pt: 3 } }}>
       <GalleryGrid
         items={items}
         loadingMore={loadingMore}

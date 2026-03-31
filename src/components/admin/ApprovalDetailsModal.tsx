@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -60,13 +60,16 @@ export default function ApprovalDetailsModal({
   onApprove,
   onReject,
 }: ApprovalDetailsModalProps) {
-  const [rejectionReason, setRejectionReason] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setRejectionReason("");
-    }
-  }, [open, item?.id]);
+  const activeItemId = open ? item?.id ?? null : null;
+  const [rejectionState, setRejectionState] = useState<{
+    itemId: string | null;
+    value: string;
+  }>({
+    itemId: null,
+    value: "",
+  });
+  const rejectionReason =
+    rejectionState.itemId === activeItemId ? rejectionState.value : "";
 
   const isBusy = busyAction !== null;
 
@@ -171,7 +174,12 @@ export default function ApprovalDetailsModal({
                 minRows={2}
                 label="Rejection reason (optional)"
                 value={rejectionReason}
-                onChange={(event) => setRejectionReason(event.target.value)}
+                onChange={(event) =>
+                  setRejectionState({
+                    itemId: activeItemId,
+                    value: event.target.value,
+                  })
+                }
                 placeholder="Not required yet; included for future rejection workflow."
               />
 

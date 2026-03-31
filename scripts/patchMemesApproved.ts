@@ -63,5 +63,7 @@ patchAllMemesToApproved()
   .finally(() => {
     try {
       unlinkSync(adcPath);
-    } catch {}
+    } catch {
+      // Ignore cleanup failures for temp credentials file.
+    }
   });

@@ -52,6 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authEventIdRef = useRef(0);
 
   useEffect(() => {
+    const nextAuthEventIdOnCleanup = authEventIdRef.current + 1;
+
     const stopActiveProfileSubscription = () => {
       if (profileUnsubscribeRef.current) {
         profileUnsubscribeRef.current();
@@ -118,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      ++authEventIdRef.current;
+      authEventIdRef.current = nextAuthEventIdOnCleanup;
       stopActiveProfileSubscription();
       unsubscribe();
     };

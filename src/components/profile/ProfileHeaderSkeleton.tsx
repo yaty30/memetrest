@@ -1,13 +1,5 @@
-import { Box, Skeleton } from "@mui/material";
-import {
-  AVATAR_PROTRUDE,
-  AVATAR_SIZE,
-  BANNER_H,
-  BAR_H,
-  BAR_OVERLAP,
-  BAR_RADIUS,
-  BAR_WIDTH,
-} from "./ProfileHeader.constants";
+import { Box, Skeleton, Stack } from "@mui/material";
+import { AVATAR_SIZE, BANNER_H } from "./ProfileHeader.constants";
 
 export default function ProfileHeaderSkeleton() {
   return (
@@ -17,55 +9,46 @@ export default function ProfileHeaderSkeleton() {
         sx={{ width: "100%", height: BANNER_H }}
       />
 
-      <Box
+      <Stack
+        alignItems="center"
         sx={{
-          display: "flex",
-          justifyContent: "center",
           mt: {
-            xs: `-${BAR_OVERLAP.xs}px`,
-            sm: `-${BAR_OVERLAP.sm}px`,
-            md: `-${BAR_OVERLAP.md}px`,
+            xs: `-${Math.round(AVATAR_SIZE.xs / 2)}px`,
+            sm: `-${Math.round(AVATAR_SIZE.sm / 2)}px`,
+            md: `-${Math.round(AVATAR_SIZE.md / 2)}px`,
           },
         }}
       >
-        <Box
+        <Skeleton
+          variant="rounded"
           sx={{
-            position: "relative",
-            width: BAR_WIDTH,
-            minHeight: BAR_H,
-            borderRadius: BAR_RADIUS,
-            overflow: "hidden",
+            width: AVATAR_SIZE,
+            height: AVATAR_SIZE,
+            borderRadius: "18% 18% 24% 24%",
+            clipPath: "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)",
           }}
-        >
-          <Skeleton
-            variant="rectangular"
-            sx={{ width: "100%", height: "100%", minHeight: BAR_H }}
-          />
+        />
 
-          <Box
-            sx={{
-              position: "absolute",
-              top: {
-                xs: `-${AVATAR_PROTRUDE.xs}px`,
-                sm: `-${AVATAR_PROTRUDE.sm}px`,
-                md: `-${AVATAR_PROTRUDE.md}px`,
-              },
-              left: "50%",
-              transform: "translateX(-50%)",
-            }}
-          >
-            <Skeleton
-              variant="rounded"
-              sx={{
-                width: AVATAR_SIZE,
-                height: AVATAR_SIZE,
-                borderRadius: "18% 18% 24% 24%",
-                clipPath: "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)",
-              }}
-            />
-          </Box>
-        </Box>
-      </Box>
+        <Skeleton
+          variant="rounded"
+          sx={{
+            mt: 1.25,
+            width: { xs: 120, sm: 140, md: 160 },
+            height: { xs: 18, sm: 20 },
+            borderRadius: "6px",
+          }}
+        />
+
+        <Skeleton
+          variant="rounded"
+          sx={{
+            mt: 0.75,
+            width: { xs: 100, sm: 110 },
+            height: { xs: 14, sm: 15 },
+            borderRadius: "6px",
+          }}
+        />
+      </Stack>
     </Box>
   );
 }

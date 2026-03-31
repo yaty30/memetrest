@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -120,16 +120,21 @@ export default function UploadAssetCard({
   submitting,
   onSubmitForReview,
 }: UploadAssetCardProps) {
-  const [previewLoaded, setPreviewLoaded] = useState(false);
-  const [previewLoadFailed, setPreviewLoadFailed] = useState(false);
-
-  useEffect(() => {
-    setPreviewLoaded(false);
-    setPreviewLoadFailed(false);
-  }, [item.id, item.previewUrl]);
+  const previewKey = `${item.id}:${item.previewUrl ?? ""}`;
+  const [previewState, setPreviewState] = useState<{
+    key: string;
+    loaded: boolean;
+    failed: boolean;
+  }>({
+    key: "",
+    loaded: false,
+    failed: false,
+  });
 
   const preview = item.previewUrl;
-  const showPreview = Boolean(preview) && previewLoaded && !previewLoadFailed;
+  const previewLoaded =
+    previewState.key === previewKey && previewState.loaded && !previewState.failed;
+  const showPreview = Boolean(preview) && previewLoaded;
   const isReviewable =
     item.reviewStatus === "uploaded" && item.visibility === "public";
   const hint = workflowHint(item.reviewStatus, item.visibility);
@@ -171,10 +176,19 @@ export default function UploadAssetCard({
             alt={item.title || "Upload preview"}
             draggable={false}
             loading="lazy"
-            onLoad={() => setPreviewLoaded(true)}
+            onLoad={() =>
+              setPreviewState({
+                key: previewKey,
+                loaded: true,
+                failed: false,
+              })
+            }
             onError={() => {
-              setPreviewLoaded(false);
-              setPreviewLoadFailed(true);
+              setPreviewState({
+                key: previewKey,
+                loaded: false,
+                failed: true,
+              });
             }}
             sx={{
               display: "block",

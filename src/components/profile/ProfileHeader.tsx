@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { UserProfile } from "../../types/user";
+import { BANNER_H, DESKTOP_BP } from "./ProfileHeader.constants";
 import AssetPickerDialog from "./AssetPickerDialog";
 import EditProfileDialog from "./EditProfileDialog";
 import ProfileHeaderBanner from "./ProfileHeaderBanner";
@@ -8,12 +9,17 @@ import ProfileHeaderBar from "./ProfileHeaderBar";
 import ProfileHeaderBio from "./ProfileHeaderBio";
 import ProfileHeaderSkeleton from "./ProfileHeaderSkeleton";
 
+/** Gradient used on mobile to darken the banner behind identity content. */
+const HERO_GRADIENT =
+  "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 18%, rgba(0,0,0,0.48) 42%, rgba(0,0,0,0.76) 68%, rgba(0,0,0,0.92) 100%)";
+
 interface ProfileHeaderProps {
   profile: UserProfile;
   isOwnProfile: boolean;
   uploadCount: number;
   uploadCountLoading: boolean;
   uploadCountError: string | null;
+  collapseProgress?: number;
   loading?: boolean;
   onBack?: () => void;
 }
@@ -24,9 +30,13 @@ export default function ProfileHeader({
   uploadCount,
   uploadCountLoading,
   uploadCountError,
+  collapseProgress = 0,
   loading,
   onBack,
 }: ProfileHeaderProps) {
+  const theme = useTheme();
+  const desktopUp = useMediaQuery(theme.breakpoints.up(DESKTOP_BP));
+  const mdUp = useMediaQuery(theme.breakpoints.up("md"));
   const [bannerError, setBannerError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -45,36 +55,89 @@ export default function ProfileHeader({
 
   const bannerUrl = profile.banner?.url;
   const showBanner = Boolean(bannerUrl) && !bannerError;
+  const bannerExpandedHeight = mdUp
+    ? BANNER_H.md
+    : desktopUp
+      ? BANNER_H.sm
+      : BANNER_H.xs;
+  const bannerCollapsedHeight = mdUp ? 132 : desktopUp ? 104 : 84;
+  const bannerHeight =
+    bannerExpandedHeight -
+    (bannerExpandedHeight - bannerCollapsedHeight) * collapseProgress;
+
+  /** True when the mobile hero layout is active (banner = full background). */
+  const mobileHero = !desktopUp;
 
   return (
-    <Box>
-      <ProfileHeaderBanner
-        bannerUrl={bannerUrl}
-        showBanner={showBanner}
-        isOwnProfile={isOwnProfile}
-        onBack={onBack}
-        onBannerError={() => setBannerError(true)}
-        onChangeBanner={() => setBannerPickerOpen(true)}
-      />
-
-      <ProfileHeaderBar
-        profile={profile}
-        uploadCount={uploadCount}
-        uploadCountLoading={uploadCountLoading}
-        uploadCountError={uploadCountError}
-        name={name}
-        initials={initials}
-        isOwnProfile={isOwnProfile}
-        avatarError={avatarError}
-        onAvatarError={() => setAvatarError(true)}
-        onChangeAvatar={() => setAvatarPickerOpen(true)}
-        onEditProfile={() => setEditOpen(true)}
-        onShareProfile={() =>
-          navigator.clipboard.writeText(window.location.href)
+    <Box sx={{ overflow: "hidden", position: "relative" }}>
+      {/* Banner layer — absolute full-bleed on mobile, normal flow on sm+ */}
+      <Box
+        sx={
+          mobileHero
+            ? { position: "absolute", inset: 0, zIndex: 0 }
+            : {
+                height: `${Math.round(bannerHeight)}px`,
+                overflow: "hidden",
+                transition: "height 220ms ease",
+              }
         }
-      />
+      >
+        <ProfileHeaderBanner
+          bannerUrl={bannerUrl}
+          showBanner={showBanner}
+          isOwnProfile={isOwnProfile}
+          onBack={onBack}
+          onBannerError={() => setBannerError(true)}
+          onChangeBanner={() => setBannerPickerOpen(true)}
+          heroMode={mobileHero}
+        />
+      </Box>
 
-      <ProfileHeaderBio bio={profile.bio} isOwnProfile={isOwnProfile} />
+      {/* Mobile hero gradient overlay for text readability */}
+      {mobileHero && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            background: HERO_GRADIENT,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* Identity content — floats over the banner on mobile */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          ...(mobileHero && { pt: `${BANNER_H.xs}px`, pb: 2 }),
+        }}
+      >
+        <ProfileHeaderBar
+          profile={profile}
+          uploadCount={uploadCount}
+          uploadCountLoading={uploadCountLoading}
+          uploadCountError={uploadCountError}
+          name={name}
+          initials={initials}
+          isOwnProfile={isOwnProfile}
+          avatarError={avatarError}
+          onAvatarError={() => setAvatarError(true)}
+          onChangeAvatar={() => setAvatarPickerOpen(true)}
+          onEditProfile={() => setEditOpen(true)}
+          onShareProfile={() =>
+            navigator.clipboard.writeText(window.location.href)
+          }
+          collapseProgress={collapseProgress}
+        />
+
+        <ProfileHeaderBio
+          bio={profile.bio}
+          isOwnProfile={isOwnProfile}
+          collapseProgress={collapseProgress}
+        />
+      </Box>
 
       {isOwnProfile && (
         <>
