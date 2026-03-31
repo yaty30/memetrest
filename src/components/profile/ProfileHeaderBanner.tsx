@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { Box, IconButton } from "@mui/material";
@@ -25,17 +25,18 @@ export default function ProfileHeaderBanner({
   onChangeBanner,
   heroMode,
 }: ProfileHeaderBannerProps) {
-  const [isBannerLoading, setIsBannerLoading] = useState(false);
-
-  useEffect(() => {
-    if (!showBanner || !bannerUrl) {
-      setIsBannerLoading(false);
-      return;
-    }
-    setIsBannerLoading(true);
-  }, [bannerUrl, onBannerError, showBanner]);
+  const bannerKey = showBanner && bannerUrl ? bannerUrl : "";
+  const [bannerState, setBannerState] = useState<{
+    key: string;
+    loading: boolean;
+  }>({
+    key: "",
+    loading: false,
+  });
 
   const hasBanner = showBanner && !!bannerUrl;
+  const isBannerLoading =
+    hasBanner && (bannerState.key !== bannerKey || bannerState.loading);
   const shouldShowBannerImage = hasBanner && !isBannerLoading;
 
   return (
@@ -64,9 +65,9 @@ export default function ProfileHeaderBanner({
           component="img"
           src={bannerUrl}
           alt=""
-          onLoad={() => setIsBannerLoading(false)}
+          onLoad={() => setBannerState({ key: bannerKey, loading: false })}
           onError={() => {
-            setIsBannerLoading(false);
+            setBannerState({ key: bannerKey, loading: false });
             onBannerError();
           }}
           loading="eager"

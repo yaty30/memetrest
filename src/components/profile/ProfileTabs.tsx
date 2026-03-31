@@ -108,7 +108,7 @@ export default function ProfileTabs({
           <ProfileUploadsTab
             ownerUid={profile.uid}
             isOwnProfile={isOwnProfile}
-            scrollRoot={scrollRef.current}
+            scrollRootRef={scrollRef}
           />
         )}
         {tab === 1 && (
