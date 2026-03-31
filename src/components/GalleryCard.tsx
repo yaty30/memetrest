@@ -41,7 +41,7 @@ export default function GalleryCard({
   const [snackMsg, setSnackMsg] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const { viewerHasLiked, likeCount, likePending, handleLike } = useMemeLike({
+  const { viewerHasLiked, likeCount, handleLike } = useMemeLike({
     memeId: item.id,
     initialLikeCount: item.likeCount,
     initialViewerHasLiked: item.viewerHasLiked,
