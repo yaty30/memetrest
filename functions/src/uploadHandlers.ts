@@ -191,9 +191,7 @@ function normalizeTags(tags: unknown): string[] {
   return Array.from(new Set(normalized));
 }
 
-function normalizeVisibility(
-  value: unknown,
-): UploadAssetDoc["visibility"] {
+function normalizeVisibility(value: unknown): UploadAssetDoc["visibility"] {
   if (value == null) return "private";
   if (value === "private" || value === "public") return value;
   throw new HttpsError(
@@ -274,7 +272,10 @@ function readUploadProfile(
 ): UserUploadProfile {
   const fallback = createDefaultUserUploadProfile("basic", now);
   if (!userData?.uploadProfile) return fallback;
-  return normalizeProfileForNow(userData.uploadProfile, now);
+  const normalized = normalizeProfileForNow(userData.uploadProfile, now);
+  // Always derive limits from code so deploys take effect immediately
+  const canonical = createDefaultUserUploadProfile(normalized.trustTier, now);
+  return { ...normalized, limits: canonical.limits };
 }
 
 function enforceUploadAllowed(profile: UserUploadProfile, now: number): void {
@@ -391,7 +392,9 @@ function mapApprovedAssetToMemeDoc(input: {
   const storagePath =
     asString(storage?.originalPath) || asString(existingMemeData?.storagePath);
   const uploadedBy =
-    asString(assetData.ownerId) || asString(existingMemeData?.uploadedBy) || null;
+    asString(assetData.ownerId) ||
+    asString(existingMemeData?.uploadedBy) ||
+    null;
 
   const displayName =
     asString(ownerData?.displayName).trim() ||
