@@ -18,7 +18,7 @@
     "backfill:meme-like-count": "npx tsx scripts/backfillMemeLikeCount.ts",
     "backfill:meme-like-count:fix": "npx tsx scripts/backfillMemeLikeCount.ts --apply",
     "seed:profile-assets": "npx tsx scripts/seedProfileAssets.ts",
-    "deploy": "npx firebase-tools deploy --project memetrest-b57dc",
+    "deploy": "npx firebase-tools deploy --project memetrest-b57dc --only hosting,functions",
     "golive": "npx firebase-tools deploy --only hosting --project memetrest-b57dc"
   },
   "dependencies": {
