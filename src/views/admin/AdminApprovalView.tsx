@@ -146,7 +146,7 @@ export default function AdminApprovalView() {
 
   return (
     <>
-      <Stack spacing={1.5} sx={{ minHeight: 0 }}>
+      <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
         <ApprovalToolbar
           pendingCount={remainingQueue.length}
           searchValue={searchValue}
@@ -162,8 +162,10 @@ export default function AdminApprovalView() {
         <Box
           className="gallery-scroll"
           sx={{
-            maxHeight: "calc(100vh - 300px)",
-            minHeight: 200,
+            flex: 1,
+            minHeight: 0,
+            pr: 0.5,
+            pb: 3,
           }}
         >
           {loading ? (

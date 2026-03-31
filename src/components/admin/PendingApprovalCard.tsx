@@ -1,11 +1,18 @@
+import type { MouseEvent } from "react";
 import {
   Box,
   Button,
+  ButtonBase,
+  Card,
+  CardActions,
   Chip,
   CircularProgress,
+  Divider,
   Stack,
   Typography,
 } from "@mui/material";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import type { PendingApprovalItem } from "../../hooks/usePendingApprovalQueue";
 import type { ApprovalAction } from "./approvalTypes";
 
@@ -44,10 +51,29 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function asMediaTypeLabel(item: PendingApprovalItem): string {
-  if (item.asset.isAnimated || item.asset.kind === "gif") return "GIF";
-  return "Image";
+function isGif(item: PendingApprovalItem): boolean {
+  return (
+    item.asset.isAnimated ||
+    item.asset.kind === "gif" ||
+    item.asset.mimeType.toLowerCase() === "image/gif"
+  );
 }
+
+/* ── Tokens ── */
+const chipSx = {
+  height: 22,
+  fontSize: "0.6875rem",
+  "& .MuiChip-label": { px: 0.75 },
+} as const;
+
+const footerBtnSx = {
+  textTransform: "none",
+  fontSize: "0.8rem",
+  fontWeight: 600,
+  borderRadius: "10px",
+  flex: 1,
+  py: 0.875,
+} as const;
 
 export default function PendingApprovalCard({
   item,
@@ -59,163 +85,270 @@ export default function PendingApprovalCard({
   const isBusy = busyAction !== null;
   const hasDimensions =
     item.asset.dimensions.width > 0 && item.asset.dimensions.height > 0;
+  const showGif = isGif(item);
   const riskIndicators = [
-    item.asset.moderation.userSensitiveFlag ? "Sensitive flag" : null,
+    item.asset.moderation.userSensitiveFlag ? "Sensitive" : null,
     item.asset.moderation.scanResult !== "unknown"
       ? `Scan: ${item.asset.moderation.scanResult}`
       : null,
   ].filter(Boolean) as string[];
 
+  const stop = (e: MouseEvent) => e.stopPropagation();
+
   return (
-    <Box
-      sx={(theme) => ({
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: "14px",
-        overflow: "hidden",
+    <Card
+      variant="outlined"
+      sx={{
+        borderRadius: "16px",
+        borderColor: "divider",
         bgcolor: "background.default",
-      })}
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        transition: "border-color 0.15s, box-shadow 0.15s",
+        "&:hover": {
+          borderColor: "text.disabled",
+          boxShadow:
+            "0 4px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)",
+        },
+      }}
     >
-      <Box
+      {/* ─── Clickable card surface ─── */}
+      <ButtonBase
+        onClick={() => onViewDetails(item)}
         sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "minmax(0, 2fr) minmax(0, 3fr)" },
-          minHeight: { xs: 300, md: 260 },
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          textAlign: "left",
+          width: "100%",
         }}
       >
-        <Box
-          sx={(theme) => ({
-            position: "relative",
-            borderRight: { xs: "none", md: `1px solid ${theme.palette.divider}` },
-            borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: "none" },
-            minHeight: { xs: 220, md: "100%" },
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background:
-              "linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%)",
-            backgroundSize: "16px 16px",
-            backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
-            bgcolor: "surface.input",
-          })}
+        {/* ─── Badge row ─── */}
+        <Stack
+          direction="row"
+          spacing={0.5}
+          useFlexGap
+          flexWrap="wrap"
+          justifyContent="center"
+          sx={{ pt: 2, px: 2 }}
         >
-          {item.previewUrl ? (
-            <Box
-              component="img"
-              src={item.previewUrl}
-              alt={item.asset.title || "Pending upload preview"}
-              sx={{
-                width: "100%",
-                height: "100%",
-                maxHeight: { xs: 300, md: 380 },
-                objectFit: "contain",
-              }}
-            />
-          ) : (
-            <Typography sx={{ color: "text.secondary", fontSize: "0.8125rem" }}>
-              Preview unavailable
-            </Typography>
-          )}
-
-          {asMediaTypeLabel(item) === "GIF" && (
+          <Chip label="Pending" color="warning" size="small" sx={chipSx} />
+          {showGif && (
             <Chip
               label="GIF"
               size="small"
               sx={{
-                position: "absolute",
-                top: 10,
-                left: 10,
-                bgcolor: "rgba(0,0,0,0.65)",
-                color: "#fff",
+                ...chipSx,
+                bgcolor: "rgb(205, 243, 248)",
+                color: "#062d3d",
                 fontWeight: 700,
               }}
             />
           )}
-        </Box>
-
-        <Stack spacing={1.5} sx={{ p: { xs: 1.5, sm: 2 } }}>
-          <Stack spacing={0.5}>
-            <Typography sx={{ fontSize: "1rem", fontWeight: 700 }} noWrap>
-              {item.asset.title || `Untitled (${item.asset.id.slice(0, 8)})`}
-            </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: "0.8125rem" }}>
-              {item.uploader.displayName}
-              {item.uploader.username ? ` (@${item.uploader.username})` : ""} •{" "}
-              {formatRelativeTime(item.asset.createdAt)}
-            </Typography>
-          </Stack>
-
-          <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-            <Chip label="Pending review" color="warning" size="small" />
-            <Chip label={asMediaTypeLabel(item)} size="small" variant="outlined" />
+          {!showGif && (
             <Chip
-              label={
-                hasDimensions
-                  ? `${item.asset.dimensions.width}x${item.asset.dimensions.height}`
-                  : "Unknown size"
-              }
+              label="Image"
               size="small"
               variant="outlined"
+              sx={chipSx}
             />
+          )}
+          {riskIndicators.map((risk) => (
+            <Chip
+              key={risk}
+              label={risk}
+              color="error"
+              size="small"
+              sx={chipSx}
+            />
+          ))}
+        </Stack>
+
+        {/* ─── Centered media preview ─── */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            px: 2.5,
+            pt: 2,
+            pb: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              maxWidth: 280,
+              aspectRatio: "1 / 1",
+              borderRadius: "12px",
+              overflow: "hidden",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3)",
+              background:
+                "linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%), " +
+                "linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%), " +
+                "linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%), " +
+                "linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%)",
+              backgroundSize: "10px 10px",
+              backgroundPosition: "0 0, 0 5px, 5px -5px, -5px 0px",
+              bgcolor: "action.hover",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {item.previewUrl ? (
+              <Box
+                component="img"
+                src={item.previewUrl}
+                alt={item.asset.title || "Pending upload"}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <Typography sx={{ color: "text.disabled", fontSize: "0.75rem" }}>
+                No preview
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* ─── Centered title ─── */}
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 700,
+            lineHeight: 1.3,
+            textAlign: "center",
+            px: 2,
+          }}
+          noWrap
+        >
+          {item.asset.title || `Untitled (${item.asset.id.slice(0, 8)})`}
+        </Typography>
+
+        {/* ─── Metadata ─── */}
+        <Stack
+          spacing={0.5}
+          alignItems="center"
+          sx={{ px: 2, pt: 0.5, pb: 2 }}
+        >
+          <Typography
+            sx={{
+              color: "text.secondary",
+              fontSize: "0.75rem",
+              textAlign: "center",
+            }}
+          >
+            {item.uploader.displayName}
+            {item.uploader.username ? ` (@${item.uploader.username})` : ""}
+            {" · "}
+            {formatRelativeTime(item.asset.createdAt)}
+          </Typography>
+
+          <Stack
+            direction="row"
+            spacing={0.5}
+            useFlexGap
+            flexWrap="wrap"
+            justifyContent="center"
+          >
+            {hasDimensions && (
+              <Chip
+                label={`${item.asset.dimensions.width}×${item.asset.dimensions.height}`}
+                size="small"
+                variant="outlined"
+                sx={chipSx}
+              />
+            )}
             <Chip
               label={formatFileSize(item.asset.fileSize)}
               size="small"
               variant="outlined"
+              sx={chipSx}
             />
-            <Chip label="Reports: -" size="small" variant="outlined" />
           </Stack>
 
           {item.asset.tags.length > 0 && (
-            <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-              {item.asset.tags.slice(0, 8).map((tag) => (
-                <Chip key={tag} size="small" label={`#${tag}`} />
+            <Stack
+              direction="row"
+              spacing={0.5}
+              useFlexGap
+              flexWrap="wrap"
+              justifyContent="center"
+            >
+              {item.asset.tags.slice(0, 5).map((tag) => (
+                <Chip
+                  key={tag}
+                  label={`#${tag}`}
+                  size="small"
+                  sx={{ ...chipSx, bgcolor: "action.selected" }}
+                />
               ))}
+              {item.asset.tags.length > 5 && (
+                <Typography
+                  sx={{
+                    color: "text.disabled",
+                    fontSize: "0.6875rem",
+                    alignSelf: "center",
+                  }}
+                >
+                  +{item.asset.tags.length - 5}
+                </Typography>
+              )}
             </Stack>
           )}
-
-          {riskIndicators.length > 0 && (
-            <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-              {riskIndicators.map((risk) => (
-                <Chip key={risk} label={risk} color="error" size="small" />
-              ))}
-            </Stack>
-          )}
-
-          <Stack direction="row" spacing={1} sx={{ mt: "auto" }}>
-            <Button
-              variant="contained"
-              onClick={() => onApprove(item)}
-              disabled={isBusy}
-              startIcon={
-                busyAction === "approve" ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : undefined
-              }
-            >
-              Approve
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => onReject(item)}
-              disabled={isBusy}
-              startIcon={
-                busyAction === "reject" ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : undefined
-              }
-            >
-              Reject
-            </Button>
-            <Button
-              variant="text"
-              onClick={() => onViewDetails(item)}
-              disabled={isBusy}
-            >
-              View Details
-            </Button>
-          </Stack>
         </Stack>
-      </Box>
-    </Box>
+      </ButtonBase>
+
+      {/* ─── Footer actions ─── */}
+      <Divider />
+      <CardActions sx={{ px: 2, py: 1.5, gap: 1 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          onClick={(e) => {
+            stop(e);
+            onReject(item);
+          }}
+          disabled={isBusy}
+          startIcon={
+            busyAction === "reject" ? (
+              <CircularProgress size={14} color="inherit" />
+            ) : (
+              <CancelOutlinedIcon sx={{ fontSize: 16 }} />
+            )
+          }
+          sx={footerBtnSx}
+        >
+          Reject
+        </Button>
+        <Button
+          variant="contained"
+          size="small"
+          onClick={(e) => {
+            stop(e);
+            onApprove(item);
+          }}
+          disabled={isBusy}
+          startIcon={
+            busyAction === "approve" ? (
+              <CircularProgress size={14} color="inherit" />
+            ) : (
+              <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
+            )
+          }
+          sx={footerBtnSx}
+        >
+          Approve
+        </Button>
+      </CardActions>
+    </Card>
   );
 }
