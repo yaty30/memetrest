@@ -37,11 +37,12 @@ function getLimitsForTier(trustTier: UploadTrustTier): UserUploadLimits {
     };
   }
 
+  // TODO: restore production limits: daily=3, weekly=10, monthly=30, burst=2
   return {
-    dailyUploadLimit: 3,
-    weeklyUploadLimit: 10,
-    monthlyUploadLimit: 30,
-    burstLimitPerHour: 2,
+    dailyUploadLimit: 9999,
+    weeklyUploadLimit: 9999,
+    monthlyUploadLimit: null,
+    burstLimitPerHour: null,
   };
 }
 
