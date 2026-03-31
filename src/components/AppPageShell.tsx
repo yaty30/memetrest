@@ -20,6 +20,8 @@ interface AppPageShellProps {
   subtitle?: string;
   /** Optional elements rendered on the right side of the header row. */
   headerActions?: ReactNode;
+  /** Optional className for the shell body scroller. */
+  bodyClassName?: string;
 }
 
 export default function AppPageShell({
@@ -28,15 +30,17 @@ export default function AppPageShell({
   title,
   subtitle,
   headerActions,
+  bodyClassName,
 }: AppPageShellProps) {
   const hasHeader = Boolean(title);
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {/* ─── Navbar ─── */}
@@ -59,6 +63,7 @@ export default function AppPageShell({
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           width: "100%",
           maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
@@ -66,11 +71,17 @@ export default function AppPageShell({
           pt: PAGE_CONTENT_PADDING_TOP,
           pb: PAGE_CONTENT_PADDING_BOTTOM,
           boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Box
           component="main"
           sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
             bgcolor: "background.paper",
             borderRadius: { xs: 0, sm: "14px" },
             overflow: "hidden",
@@ -92,6 +103,8 @@ export default function AppPageShell({
                 flexDirection: "column",
                 gap: 2,
                 p: { xs: 2, sm: 3 },
+                flex: 1,
+                minHeight: 0,
               }}
             >
               {/* ─── Page header ─── */}
@@ -100,6 +113,7 @@ export default function AppPageShell({
                   display: "flex",
                   alignItems: "center",
                   gap: 1.5,
+                  flexShrink: 0,
                 }}
               >
                 {onBack && (
@@ -143,7 +157,18 @@ export default function AppPageShell({
               </Box>
 
               {/* ─── Body ─── */}
-              {children}
+              <Box
+                className={bodyClassName}
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {children}
+              </Box>
             </Box>
           ) : (
             // No built-in header — views manage their own interior layout.
