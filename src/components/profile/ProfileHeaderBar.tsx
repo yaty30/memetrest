@@ -1,4 +1,5 @@
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import {
@@ -13,7 +14,18 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { UserProfile } from "../../types/user";
-import { AVATAR_RING, AVATAR_SIZE, pillBtnSx } from "./ProfileHeader.constants";
+import {
+  AVATAR_PROTRUDE,
+  AVATAR_RING,
+  AVATAR_SIZE,
+  BAR_H,
+  BAR_MAX_WIDTH,
+  BAR_OVERLAP,
+  BAR_RADIUS,
+  BAR_WIDTH,
+  DESKTOP_BP,
+  pillBtnSx,
+} from "./ProfileHeader.constants";
 
 interface ProfileHeaderBarProps {
   profile: UserProfile;
@@ -131,11 +143,7 @@ function ActionRow({
 }) {
   if (!isOwnProfile) return null;
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={{ mt: mobile ? { xs: 1.5 } : { sm: 1.75, md: 2 } }}
-    >
+    <Stack direction="row" spacing={1} sx={{ mt: mobile ? { xs: 1.5 } : 0 }}>
       <Button
         variant="outlined"
         size="small"
@@ -193,7 +201,7 @@ export default function ProfileHeaderBar({
   collapseProgress = 0,
 }: ProfileHeaderBarProps) {
   const theme = useTheme();
-  const smUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const desktopUp = useMediaQuery(theme.breakpoints.up(DESKTOP_BP));
   const contentOpacity = Math.max(0, 1 - collapseProgress * 1.35);
 
   const uploadDisplay = uploadCountLoading
@@ -209,115 +217,199 @@ export default function ProfileHeaderBar({
       })
     : null;
 
-  /* ─── Desktop: 3-column row ─── */
-  if (smUp) {
+  /* ─── Desktop: bar with 3-column row ─── */
+  if (desktopUp) {
     return (
       <Box
         sx={{
           position: "relative",
           zIndex: 3,
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          gap: { sm: 3, md: 5 },
           mt: {
-            sm: `-${Math.round(AVATAR_SIZE.sm / 2)}px`,
-            md: `-${Math.round(AVATAR_SIZE.md / 2)}px`,
+            sm: `-${BAR_OVERLAP.sm}px`,
+            md: `-${BAR_OVERLAP.md}px`,
           },
-          px: { sm: 3, md: 4 },
           opacity: contentOpacity,
           transform: `translateY(-${Math.round(collapseProgress * 20)}px)`,
           transition: "opacity 180ms ease, transform 220ms ease",
           pointerEvents: contentOpacity > 0.05 ? "auto" : "none",
         }}
       >
-        {/* Left column — stats */}
+        {/* Bar container */}
         <Box
-          sx={{
-            flex: "1 1 0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: 0.25,
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: { sm: "0.88rem", md: "0.92rem" },
-              color: "text.secondary",
-              fontWeight: 500,
-              lineHeight: 1.4,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {uploadDisplay} uploads&nbsp;&middot;&nbsp;
-            {profile.savedCount ?? 0} saved
-          </Typography>
-
-          <ActionRow
-            isOwnProfile={isOwnProfile}
-            onEditProfile={onEditProfile}
-            onShareProfile={onShareProfile}
-          />
-        </Box>
-
-        {/* Center — avatar + name */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <AvatarBlock
-            profile={profile}
-            name={name}
-            initials={initials}
-            isOwnProfile={isOwnProfile}
-            avatarError={avatarError}
-            onAvatarError={onAvatarError}
-            onChangeAvatar={onChangeAvatar}
-          />
-          <Typography
-            noWrap
-            sx={{
-              mt: 1.25,
-              fontWeight: 700,
-              fontSize: { sm: "1.15rem", md: "1.3rem" },
-              letterSpacing: "-0.01em",
-              color: "text.primary",
-              lineHeight: 1.25,
-              textAlign: "center",
-              maxWidth: 220,
-            }}
-          >
-            {name}
-          </Typography>
-        </Box>
-
-        {/* Right column — join date */}
-        <Box
-          sx={{
-            flex: "1 1 0",
+          sx={(theme) => ({
+            position: "relative",
+            width: BAR_WIDTH,
+            maxWidth: BAR_MAX_WIDTH,
+            minHeight: BAR_H,
+            borderRadius: BAR_RADIUS,
+            border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+            bgcolor: alpha(theme.palette.background.paper, 0.65),
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-start",
-          }}
+            px: { sm: 3, md: 4 },
+            py: { sm: 1, md: 2 },
+          })}
         >
-          {joinDate && (
+          {/* Avatar — protruding above the bar */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: {
+                sm: `-${AVATAR_PROTRUDE.sm}px`,
+                md: `-${AVATAR_PROTRUDE.md}px`,
+              },
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}
+          >
+            <AvatarBlock
+              profile={profile}
+              name={name}
+              initials={initials}
+              isOwnProfile={isOwnProfile}
+              avatarError={avatarError}
+              onAvatarError={onAvatarError}
+              onChangeAvatar={onChangeAvatar}
+            />
+          </Box>
+
+          {/* Left column — stats card */}
+          <Box
+            sx={{
+              flex: "1 1 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={{ sm: 2.5, md: 3 }}
+              sx={() => ({
+                borderRadius: "10px",
+                py: { sm: 0.75, md: 1 },
+              })}
+            >
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  sx={{
+                    fontSize: { sm: "1.15rem", md: "1.3rem" },
+                    fontWeight: 700,
+                    color: "text.primary",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {uploadDisplay}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { sm: "0.65rem", md: "0.7rem" },
+                    fontWeight: 600,
+                    color: "text.secondary",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Uploads
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography
+                  sx={{
+                    fontSize: { sm: "1.15rem", md: "1.3rem" },
+                    fontWeight: 700,
+                    color: "text.primary",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {profile.savedCount ?? 0}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { sm: "0.65rem", md: "0.7rem" },
+                    fontWeight: 600,
+                    color: "text.secondary",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Saved
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          {/* Center — username (below the protruding avatar) */}
+          <Box
+            sx={{
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              minWidth: { sm: 140, md: 180 },
+            }}
+          >
             <Typography
+              noWrap
               sx={{
-                fontSize: { sm: "0.84rem", md: "0.88rem" },
-                color: "text.secondary",
-                fontWeight: 400,
-                lineHeight: 1.4,
-                whiteSpace: "nowrap",
+                fontWeight: 700,
+                fontSize: { sm: "1.1rem", md: "1.25rem" },
+                letterSpacing: "-0.01em",
+                color: "text.primary",
+                lineHeight: 1.25,
+                textAlign: "center",
+                maxWidth: 220,
+                transform: "translateY(16px)",
               }}
             >
-              Joined {joinDate}
+              {name}
             </Typography>
-          )}
+          </Box>
+
+          {/* Right column — join date + actions */}
+          <Box
+            sx={{
+              flex: "1 1 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 0.75,
+            }}
+          >
+            {joinDate && (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <CalendarTodayOutlinedIcon
+                  sx={{
+                    fontSize: { sm: 14, md: 15 },
+                    color: "text.disabled",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: { sm: "0.8rem", md: "0.84rem" },
+                    color: "text.secondary",
+                    fontWeight: 400,
+                    lineHeight: 1.4,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {joinDate}
+                </Typography>
+              </Stack>
+            )}
+
+            <ActionRow
+              isOwnProfile={isOwnProfile}
+              onEditProfile={onEditProfile}
+              onShareProfile={onShareProfile}
+            />
+          </Box>
         </Box>
       </Box>
     );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { UserProfile } from "../../types/user";
-import { BANNER_H } from "./ProfileHeader.constants";
+import { BANNER_H, DESKTOP_BP } from "./ProfileHeader.constants";
 import AssetPickerDialog from "./AssetPickerDialog";
 import EditProfileDialog from "./EditProfileDialog";
 import ProfileHeaderBanner from "./ProfileHeaderBanner";
@@ -35,7 +35,7 @@ export default function ProfileHeader({
   onBack,
 }: ProfileHeaderProps) {
   const theme = useTheme();
-  const smUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const desktopUp = useMediaQuery(theme.breakpoints.up(DESKTOP_BP));
   const mdUp = useMediaQuery(theme.breakpoints.up("md"));
   const [bannerError, setBannerError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -57,16 +57,16 @@ export default function ProfileHeader({
   const showBanner = Boolean(bannerUrl) && !bannerError;
   const bannerExpandedHeight = mdUp
     ? BANNER_H.md
-    : smUp
+    : desktopUp
       ? BANNER_H.sm
       : BANNER_H.xs;
-  const bannerCollapsedHeight = mdUp ? 132 : smUp ? 104 : 84;
+  const bannerCollapsedHeight = mdUp ? 132 : desktopUp ? 104 : 84;
   const bannerHeight =
     bannerExpandedHeight -
     (bannerExpandedHeight - bannerCollapsedHeight) * collapseProgress;
 
   /** True when the mobile hero layout is active (banner = full background). */
-  const mobileHero = !smUp;
+  const mobileHero = !desktopUp;
 
   return (
     <Box sx={{ overflow: "hidden", position: "relative" }}>
