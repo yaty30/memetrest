@@ -123,8 +123,13 @@ async function clearStorage() {
       count++;
     }
     console.log(`✓ Deleted ${count} files from Storage.`);
-  } catch (error: any) {
-    if (error.code === "storage/object-not-found") {
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: unknown }).code === "storage/object-not-found"
+    ) {
       console.log("Storage folder doesn't exist or is empty.");
     } else {
       throw error;
@@ -161,9 +166,9 @@ async function uploadAndSeed() {
     const fileBuffer = fs.readFileSync(filePath);
 
     // Extract actual dimensions
-    let dimensions = { width: 0, height: 0, type: "" };
+    let dimensions: ReturnType<typeof imageSize> | null = null;
     try {
-      dimensions = imageSize(fileBuffer) as any;
+      dimensions = imageSize(fileBuffer);
     } catch (err) {
       console.warn(
         `Could not read dimensions for ${file}, skipping or using defaults:`,
@@ -171,8 +176,8 @@ async function uploadAndSeed() {
       );
     }
 
-    const width = dimensions.width || 0;
-    const height = dimensions.height || 0;
+    const width = dimensions?.width ?? 0;
+    const height = dimensions?.height ?? 0;
     const aspectRatio = height > 0 ? width / height : 1;
 
     const ext = path.extname(file).toLowerCase();

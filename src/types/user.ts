@@ -132,7 +132,7 @@ export const RESERVED_USERNAMES = [
 ] as const;
 
 export const DISPLAY_NAME_MAX_LENGTH = 50;
-export const DISPLAY_NAME_PATTERN = /^[\p{L}\p{N} '\-]{1,50}$/u;
+export const DISPLAY_NAME_PATTERN = /^[\p{L}\p{N} '-]{1,50}$/u;
 
 export const BIO_MAX_LENGTH = 300;
 export const BIO_MAX_LINE_BREAKS = 5;

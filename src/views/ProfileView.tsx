@@ -69,7 +69,6 @@ export default function ProfileView({
 }: ProfileViewProps) {
   const [headerCollapse] = useState(0);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleTabScroll = useCallback((_scrollTop: number) => {
     // Collapsing header feature suppressed for now
   }, []);
