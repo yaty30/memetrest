@@ -16,6 +16,7 @@ export default function UploadPage() {
       onBack={() => navigate(-1)}
       title="Upload"
       subtitle="Upload a new asset"
+      bodyClassName="gallery-scroll"
     >
       <UploadAssetView />
     </AppPageShell>

@@ -7,7 +7,6 @@ import {
   Typography,
 } from "@mui/material";
 import UploadAssetCard from "../components/UploadAssetCard";
-import "../components/UploadAssetCard.css";
 import type { UploadCardModel } from "../services/uploadCardMapper";
 import { submitAssetForReview } from "../services/uploadPipelineService";
 
@@ -89,7 +88,18 @@ export default function MyUploadsView({
       )}
 
       {items.length > 0 && (
-        <div className="upload-grid">
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              lg: "repeat(3, minmax(0, 1fr))",
+            },
+            gap: { xs: 2, sm: 2.25, lg: 2.5 },
+            alignItems: "start",
+          }}
+        >
           {items.map((item) => (
             <UploadAssetCard
               key={item.id}
@@ -98,7 +108,7 @@ export default function MyUploadsView({
               onSubmitForReview={handleSubmitForReview}
             />
           ))}
-        </div>
+        </Box>
       )}
 
       <Snackbar

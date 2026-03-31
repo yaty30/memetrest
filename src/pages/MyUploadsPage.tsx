@@ -34,9 +34,10 @@ export default function MyUploadsPage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {/* Navbar — identical to ProfilePage */}
@@ -59,6 +60,7 @@ export default function MyUploadsPage() {
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           width: "100%",
           maxWidth: PAGE_MAX_WIDTH,
           mx: "auto",
@@ -66,11 +68,17 @@ export default function MyUploadsPage() {
           pt: PAGE_CONTENT_PADDING_TOP,
           pb: PAGE_CONTENT_PADDING_BOTTOM,
           boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Box
           component="main"
           sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
             bgcolor: "background.paper",
             borderRadius: { xs: 0, sm: "14px" },
             overflow: "hidden",
@@ -89,6 +97,10 @@ export default function MyUploadsPage() {
           <Box
             sx={{
               position: "relative",
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
               width: "100%",
               overflow: "hidden",
             }}
@@ -163,7 +175,15 @@ export default function MyUploadsPage() {
 
             {/* Subtitle + content — padded like ProfileTabs content */}
             <Box
-              sx={{ px: { xs: 2, sm: 3, md: 5 }, py: { xs: 3, sm: 4 }, mt: 4 }}
+              sx={{
+                px: { xs: 2, sm: 3, md: 5 },
+                py: { xs: 3, sm: 4 },
+                mt: 4,
+                flex: 1,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+              }}
             >
               <Typography
                 sx={{
@@ -176,7 +196,9 @@ export default function MyUploadsPage() {
                 reviewed and published. Private uploads remain private.
               </Typography>
 
-              <MyUploadsView items={items} loading={loading} error={error} />
+              <Box className="gallery-scroll" sx={{ flex: 1, minHeight: 0 }}>
+                <MyUploadsView items={items} loading={loading} error={error} />
+              </Box>
             </Box>
           </Box>
         </Box>
