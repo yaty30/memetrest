@@ -54,30 +54,35 @@ export function useUserUploads(
   userId?: string | null,
   options: UseUserUploadsOptions = DEFAULT_OPTIONS,
 ): UserUploadsSummary {
-  const [uploads, setUploads] = useState<UploadAssetDoc[]>([]);
-  const [loading, setLoading] = useState(Boolean(userId));
-  const [error, setError] = useState<string | null>(null);
+  const queryKey = userId ? `${userId}:${options.visibility}` : null;
+  const [snapshot, setSnapshot] = useState<{
+    key: string | null;
+    uploads: UploadAssetDoc[];
+    error: string | null;
+  }>({
+    key: null,
+    uploads: [],
+    error: null,
+  });
 
   useEffect(() => {
-    if (!userId) {
-      setUploads([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
+    if (!queryKey || !userId) return;
 
     const unsubscribe = subscribeToUserUploads(
       userId,
       (nextUploads) => {
-        setUploads(nextUploads);
-        setLoading(false);
+        setSnapshot({
+          key: queryKey,
+          uploads: nextUploads,
+          error: null,
+        });
       },
       (err) => {
-        setError(err.message || "Failed to load uploads.");
-        setLoading(false);
+        setSnapshot({
+          key: queryKey,
+          uploads: [],
+          error: err.message || "Failed to load uploads.",
+        });
       },
       {
         visibility: options.visibility,
@@ -87,7 +92,14 @@ export function useUserUploads(
     return () => {
       unsubscribe();
     };
-  }, [options.visibility, userId]);
+  }, [options.visibility, queryKey, userId]);
+
+  const uploads = useMemo(
+    () => (snapshot.key === queryKey ? snapshot.uploads : []),
+    [queryKey, snapshot.key, snapshot.uploads],
+  );
+  const error = snapshot.key === queryKey ? snapshot.error : null;
+  const loading = queryKey !== null && snapshot.key !== queryKey;
 
   const counts = useMemo(() => getUploadCounts(uploads), [uploads]);
 

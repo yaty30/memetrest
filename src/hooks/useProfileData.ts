@@ -26,11 +26,15 @@ export function useProfileData(username?: string): ProfileData {
     status: currentProfileStatus,
     error: currentProfileError,
   } = useAppSelector((state) => state.currentUserProfile);
-  const [fetchedProfile, setFetchedProfile] = useState<UserProfile | null>(
-    null,
-  );
-  const [fetchLoading, setFetchLoading] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const [lookupState, setLookupState] = useState<{
+    username: string | null;
+    profile: UserProfile | null;
+    notFound: boolean;
+  }>({
+    username: null,
+    profile: null,
+    notFound: false,
+  });
   const ownProfileRetryUidRef = useRef<string | null>(null);
 
   const isOwnProfile =
@@ -50,24 +54,23 @@ export function useProfileData(username?: string): ProfileData {
     if (!username || isOwnProfile || awaitingOwnProfileResolution) return;
 
     let cancelled = false;
-    setFetchedProfile(null);
-    setFetchLoading(true);
-    setNotFound(false);
 
     getUserByUsername(username)
       .then((p) => {
         if (cancelled) return;
-        if (p) {
-          setFetchedProfile(p);
-        } else {
-          setNotFound(true);
-        }
-        setFetchLoading(false);
+        setLookupState({
+          username,
+          profile: p ?? null,
+          notFound: !p,
+        });
       })
       .catch(() => {
         if (!cancelled) {
-          setNotFound(true);
-          setFetchLoading(false);
+          setLookupState({
+            username,
+            profile: null,
+            notFound: true,
+          });
         }
       });
 
@@ -132,9 +135,12 @@ export function useProfileData(username?: string): ProfileData {
     };
   }
 
+  const fetchedProfile = lookupState.username === username ? lookupState.profile : null;
+  const notFound = lookupState.username === username ? lookupState.notFound : false;
+
   return {
     profile: fetchedProfile,
-    loading: fetchLoading,
+    loading: lookupState.username !== username,
     isOwnProfile: false,
     notFound,
     signedIn: !!firebaseUser,

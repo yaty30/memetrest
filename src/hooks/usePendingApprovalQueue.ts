@@ -62,24 +62,26 @@ async function toPendingApprovalItem(
 }
 
 export function usePendingApprovalQueue(): UsePendingApprovalQueueResult {
-  const [sourceAssets, setSourceAssets] = useState<UploadAssetDoc[]>([]);
-  const [items, setItems] = useState<PendingApprovalItem[]>([]);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [mappingLoading, setMappingLoading] = useState(false);
+  const [sourceAssets, setSourceAssets] = useState<UploadAssetDoc[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const sourceKey =
+    sourceAssets?.map((asset) => `${asset.id}:${asset.updatedAt}`).join("|") ?? "";
+  const [mappingState, setMappingState] = useState<{
+    key: string;
+    items: PendingApprovalItem[];
+  }>({
+    key: "",
+    items: [],
+  });
 
   useEffect(() => {
-    setSubscriptionLoading(true);
-    setError(null);
-
     const unsubscribe = subscribeToPendingReviewUploads(
       (nextAssets) => {
         setSourceAssets(nextAssets);
-        setSubscriptionLoading(false);
+        setError(null);
       },
       (nextError) => {
         setError(nextError.message || "Failed to load pending approvals.");
-        setSubscriptionLoading(false);
       },
       {
         pageSize: 250,
@@ -92,27 +94,35 @@ export function usePendingApprovalQueue(): UsePendingApprovalQueueResult {
   }, []);
 
   useEffect(() => {
+    if (!sourceAssets) return;
+
     let active = true;
-    setMappingLoading(true);
 
     void Promise.all(sourceAssets.map((asset) => toPendingApprovalItem(asset)))
       .then((mapped) => {
         if (!active) return;
-        setItems(mapped);
+        setMappingState({
+          key: sourceKey,
+          items: mapped,
+        });
       })
       .catch(() => {
         if (!active) return;
-        setItems([]);
-      })
-      .finally(() => {
-        if (!active) return;
-        setMappingLoading(false);
+        setMappingState({
+          key: sourceKey,
+          items: [],
+        });
       });
 
     return () => {
       active = false;
     };
-  }, [sourceAssets]);
+  }, [sourceAssets, sourceKey]);
+
+  const subscriptionLoading = sourceAssets === null;
+  const mappingLoading =
+    sourceAssets !== null && mappingState.key !== sourceKey;
+  const items = mappingState.key === sourceKey ? mappingState.items : [];
 
   return {
     items,

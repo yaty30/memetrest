@@ -13,28 +13,36 @@ interface PresetAssetsState {
  * Caches results for the lifetime of the component.
  */
 export function usePresetAssets(kind: ProfileAssetKind): PresetAssetsState {
-  const [assets, setAssets] = useState<ProfileAsset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    kind: ProfileAssetKind | null;
+    assets: ProfileAsset[];
+    error: string | null;
+  }>({
+    kind: null,
+    assets: [],
+    error: null,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     getPresetAssets(kind)
       .then((result) => {
         if (!cancelled) {
-          setAssets(result);
-          setLoading(false);
+          setResult({
+            kind,
+            assets: result,
+            error: null,
+          });
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load assets",
-          );
-          setLoading(false);
+          setResult({
+            kind,
+            assets: [],
+            error: err instanceof Error ? err.message : "Failed to load assets",
+          });
         }
       });
 
@@ -43,5 +51,9 @@ export function usePresetAssets(kind: ProfileAssetKind): PresetAssetsState {
     };
   }, [kind]);
 
-  return { assets, loading, error };
+  return {
+    assets: result.kind === kind ? result.assets : [],
+    loading: result.kind !== kind,
+    error: result.kind === kind ? result.error : null,
+  };
 }

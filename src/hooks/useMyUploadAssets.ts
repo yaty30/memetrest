@@ -22,34 +22,45 @@ export function useMyUploadAssets(): UseMyUploadAssetsResult {
     visibility: "owner",
   });
 
-  const [items, setItems] = useState<UploadCardModel[]>([]);
-  const [resolvingPreviews, setResolvingPreviews] = useState(false);
+  const uploadsKey = uploads
+    .map((upload) => `${upload.id}:${upload.updatedAt ?? upload.createdAt}`)
+    .join("|");
+  const [mappingState, setMappingState] = useState<{
+    key: string;
+    items: UploadCardModel[];
+  }>({
+    key: "",
+    items: [],
+  });
 
   useEffect(() => {
     let active = true;
-    setResolvingPreviews(true);
 
     void Promise.all(uploads.map((upload) => mapUploadAssetToCardModel(upload)))
       .then((mapped) => {
         if (active) {
-          setItems(mapped);
+          setMappingState({
+            key: uploadsKey,
+            items: mapped,
+          });
         }
       })
       .catch(() => {
         if (active) {
-          setItems([]);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setResolvingPreviews(false);
+          setMappingState({
+            key: uploadsKey,
+            items: [],
+          });
         }
       });
 
     return () => {
       active = false;
     };
-  }, [uploads]);
+  }, [uploads, uploadsKey]);
+
+  const resolvingPreviews = mappingState.key !== uploadsKey;
+  const items = mappingState.key === uploadsKey ? mappingState.items : [];
 
   return {
     items,
