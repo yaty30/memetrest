@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type { UserProfile } from "../../types/user";
+import { BANNER_H } from "./ProfileHeader.constants";
 import AssetPickerDialog from "./AssetPickerDialog";
 import EditProfileDialog from "./EditProfileDialog";
 import ProfileHeaderBanner from "./ProfileHeaderBanner";
 import ProfileHeaderBar from "./ProfileHeaderBar";
 import ProfileHeaderBio from "./ProfileHeaderBio";
 import ProfileHeaderSkeleton from "./ProfileHeaderSkeleton";
+
+/** Gradient used on mobile to darken the banner behind identity content. */
+const HERO_GRADIENT =
+  "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 18%, rgba(0,0,0,0.48) 42%, rgba(0,0,0,0.76) 68%, rgba(0,0,0,0.92) 100%)";
 
 interface ProfileHeaderProps {
   profile: UserProfile;
@@ -50,20 +55,32 @@ export default function ProfileHeader({
 
   const bannerUrl = profile.banner?.url;
   const showBanner = Boolean(bannerUrl) && !bannerError;
-  const bannerExpandedHeight = mdUp ? 400 : smUp ? 180 : 140;
+  const bannerExpandedHeight = mdUp
+    ? BANNER_H.md
+    : smUp
+      ? BANNER_H.sm
+      : BANNER_H.xs;
   const bannerCollapsedHeight = mdUp ? 132 : smUp ? 104 : 84;
   const bannerHeight =
     bannerExpandedHeight -
     (bannerExpandedHeight - bannerCollapsedHeight) * collapseProgress;
 
+  /** True when the mobile hero layout is active (banner = full background). */
+  const mobileHero = !smUp;
+
   return (
-    <Box sx={{ flexShrink: 0, overflow: "hidden" }}>
+    <Box sx={{ overflow: "hidden", position: "relative" }}>
+      {/* Banner layer — absolute full-bleed on mobile, normal flow on sm+ */}
       <Box
-        sx={{
-          height: `${Math.round(bannerHeight)}px`,
-          overflow: "hidden",
-          transition: "height 220ms ease",
-        }}
+        sx={
+          mobileHero
+            ? { position: "absolute", inset: 0, zIndex: 0 }
+            : {
+                height: `${Math.round(bannerHeight)}px`,
+                overflow: "hidden",
+                transition: "height 220ms ease",
+              }
+        }
       >
         <ProfileHeaderBanner
           bannerUrl={bannerUrl}
@@ -72,32 +89,55 @@ export default function ProfileHeader({
           onBack={onBack}
           onBannerError={() => setBannerError(true)}
           onChangeBanner={() => setBannerPickerOpen(true)}
+          heroMode={mobileHero}
         />
       </Box>
 
-      <ProfileHeaderBar
-        profile={profile}
-        uploadCount={uploadCount}
-        uploadCountLoading={uploadCountLoading}
-        uploadCountError={uploadCountError}
-        name={name}
-        initials={initials}
-        isOwnProfile={isOwnProfile}
-        avatarError={avatarError}
-        onAvatarError={() => setAvatarError(true)}
-        onChangeAvatar={() => setAvatarPickerOpen(true)}
-        onEditProfile={() => setEditOpen(true)}
-        onShareProfile={() =>
-          navigator.clipboard.writeText(window.location.href)
-        }
-        collapseProgress={collapseProgress}
-      />
+      {/* Mobile hero gradient overlay for text readability */}
+      {mobileHero && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            background: HERO_GRADIENT,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
-      <ProfileHeaderBio
-        bio={profile.bio}
-        isOwnProfile={isOwnProfile}
-        collapseProgress={collapseProgress}
-      />
+      {/* Identity content — floats over the banner on mobile */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          ...(mobileHero && { pt: `${BANNER_H.xs}px`, pb: 2 }),
+        }}
+      >
+        <ProfileHeaderBar
+          profile={profile}
+          uploadCount={uploadCount}
+          uploadCountLoading={uploadCountLoading}
+          uploadCountError={uploadCountError}
+          name={name}
+          initials={initials}
+          isOwnProfile={isOwnProfile}
+          avatarError={avatarError}
+          onAvatarError={() => setAvatarError(true)}
+          onChangeAvatar={() => setAvatarPickerOpen(true)}
+          onEditProfile={() => setEditOpen(true)}
+          onShareProfile={() =>
+            navigator.clipboard.writeText(window.location.href)
+          }
+          collapseProgress={collapseProgress}
+        />
+
+        <ProfileHeaderBio
+          bio={profile.bio}
+          isOwnProfile={isOwnProfile}
+          collapseProgress={collapseProgress}
+        />
+      </Box>
 
       {isOwnProfile && (
         <>
