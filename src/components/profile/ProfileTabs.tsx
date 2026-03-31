@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Tab, Tabs } from "@mui/material";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -28,12 +28,19 @@ export default function ProfileTabs({
   onContentScroll,
 }: ProfileTabsProps) {
   const [tab, setTab] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleTabChange = (_: React.SyntheticEvent, newTab: number) => {
+    setTab(newTab);
+    // Reset header collapse when switching tabs so user sees expanded header
+    onContentScroll?.(0);
+  };
 
   return (
     <Box
       sx={{
         flex: 1,
-        minHeight: 0,
+        minHeight: { xs: 200, sm: 240 },
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -42,7 +49,7 @@ export default function ProfileTabs({
       {/* Tab bar — slightly tinted top border for surface separation */}
       <Tabs
         value={tab}
-        onChange={(_, v) => setTab(v)}
+        onChange={handleTabChange}
         variant="scrollable"
         scrollButtons={false}
         sx={{
@@ -85,9 +92,8 @@ export default function ProfileTabs({
 
       {/* Content panel */}
       <Box
-        onScroll={(event) =>
-          onContentScroll?.(event.currentTarget.scrollTop)
-        }
+        ref={scrollRef}
+        onScroll={(event) => onContentScroll?.(event.currentTarget.scrollTop)}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -102,6 +108,7 @@ export default function ProfileTabs({
           <ProfileUploadsTab
             ownerUid={profile.uid}
             isOwnProfile={isOwnProfile}
+            scrollRoot={scrollRef.current}
           />
         )}
         {tab === 1 && (

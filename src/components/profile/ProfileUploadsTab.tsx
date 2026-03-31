@@ -11,11 +11,13 @@ import type { Meme } from "../../types/meme";
 interface ProfileUploadsTabProps {
   ownerUid: string;
   isOwnProfile: boolean;
+  scrollRoot?: Element | null;
 }
 
 export default function ProfileUploadsTab({
   ownerUid,
   isOwnProfile,
+  scrollRoot,
 }: ProfileUploadsTabProps) {
   const navigate = useNavigate();
   const { items, loading, loadingMore, hasMore, error, loadMore } =
@@ -37,11 +39,11 @@ export default function ProfileUploadsTab({
       (entries) => {
         if (entries[0].isIntersecting) loadMore();
       },
-      { rootMargin: "300px" },
+      { root: scrollRoot, rootMargin: "300px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, loadMore, scrollRoot]);
 
   if (loading) {
     return (
@@ -82,7 +84,7 @@ export default function ProfileUploadsTab({
   }
 
   return (
-    <Box sx={{ mx: { xs: -2, sm: -3, md: -5 } }}>
+    <Box sx={{ minHeight: 600, mx: { xs: -2, sm: -3, md: -5, pt: 3 } }}>
       <GalleryGrid
         items={items}
         loadingMore={loadingMore}
