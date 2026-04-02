@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Box, Tab, Tabs } from "@mui/material";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -16,6 +16,8 @@ const TABS = [
   { label: "About", icon: <InfoOutlinedIcon /> },
 ] as const;
 
+const SWIPE_THRESHOLD = 50;
+
 interface ProfileTabsProps {
   profile: UserProfile;
   isOwnProfile: boolean;
@@ -28,12 +30,49 @@ export default function ProfileTabs({
   onContentScroll,
 }: ProfileTabsProps) {
   const [tab, setTab] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const uploadsScrollRef = useRef<HTMLDivElement>(null);
+
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  const goToTab = useCallback(
+    (newTab: number) => {
+      setTab(newTab);
+      onContentScroll?.(0);
+    },
+    [onContentScroll],
+  );
 
   const handleTabChange = (_: React.SyntheticEvent, newTab: number) => {
-    setTab(newTab);
-    // Reset header collapse when switching tabs so user sees expanded header
-    onContentScroll?.(0);
+    goToTab(newTab);
+  };
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0 && tab < TABS.length - 1) goToTab(tab + 1);
+        else if (dx > 0 && tab > 0) goToTab(tab - 1);
+      }
+    },
+    [tab, goToTab],
+  );
+
+  const panelSx = {
+    width: `${100 / TABS.length}%`,
+    flexShrink: 0,
+    height: "100%",
+    overflowY: "auto" as const,
+    overflowX: "hidden" as const,
+    px: { xs: 2, sm: 3, md: 5 },
+    py: { xs: 3, sm: 4 },
+    pb: "max(24px, env(safe-area-inset-bottom))",
   };
 
   return (
@@ -90,52 +129,83 @@ export default function ProfileTabs({
         ))}
       </Tabs>
 
-      {/* Content panel */}
+      {/* Swipeable content area */}
       <Box
-        ref={scrollRef}
-        onScroll={(event) => onContentScroll?.(event.currentTarget.scrollTop)}
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          px: { xs: 2, sm: 3, md: 5 },
-          py: { xs: 3, sm: 4 },
-          pb: "max(24px, env(safe-area-inset-bottom))",
-        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}
       >
-        {tab === 0 && (
-          <ProfileUploadsTab
-            ownerUid={profile.uid}
-            isOwnProfile={isOwnProfile}
-            scrollRootRef={scrollRef}
-          />
-        )}
-        {tab === 1 && (
-          <ProfileEmptyState
-            icon={<BookmarkBorderIcon sx={{ fontSize: 44 }} />}
-            title="No saved memes"
-            subtitle={
-              isOwnProfile
-                ? "Memes you save will appear here"
-                : "This user hasn't saved any memes yet"
+        <Box
+          sx={{
+            display: "flex",
+            width: `${TABS.length * 100}%`,
+            height: "100%",
+            transform: `translateX(-${tab * (100 / TABS.length)}%)`,
+            transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+            willChange: "transform",
+          }}
+        >
+          {/* Panel 0 — Uploads */}
+          <Box
+            ref={uploadsScrollRef}
+            onScroll={(e) =>
+              tab === 0 && onContentScroll?.(e.currentTarget.scrollTop)
             }
-          />
-        )}
-        {tab === 2 && (
-          <ProfileEmptyState
-            icon={<CollectionsOutlinedIcon sx={{ fontSize: 44 }} />}
-            title="No collections yet"
-            subtitle={
-              isOwnProfile
-                ? "Create collections to organize your favorite memes"
-                : "This user hasn't created any collections yet"
+            sx={panelSx}
+          >
+            <ProfileUploadsTab
+              ownerUid={profile.uid}
+              isOwnProfile={isOwnProfile}
+              scrollRootRef={uploadsScrollRef}
+            />
+          </Box>
+
+          {/* Panel 1 — Saved */}
+          <Box
+            onScroll={(e) =>
+              tab === 1 && onContentScroll?.(e.currentTarget.scrollTop)
             }
-          />
-        )}
-        {tab === 3 && (
-          <ProfileAboutTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
+            sx={panelSx}
+          >
+            <ProfileEmptyState
+              icon={<BookmarkBorderIcon sx={{ fontSize: 44 }} />}
+              title="No saved memes"
+              subtitle={
+                isOwnProfile
+                  ? "Memes you save will appear here"
+                  : "This user hasn't saved any memes yet"
+              }
+            />
+          </Box>
+
+          {/* Panel 2 — Collections */}
+          <Box
+            onScroll={(e) =>
+              tab === 2 && onContentScroll?.(e.currentTarget.scrollTop)
+            }
+            sx={panelSx}
+          >
+            <ProfileEmptyState
+              icon={<CollectionsOutlinedIcon sx={{ fontSize: 44 }} />}
+              title="No collections yet"
+              subtitle={
+                isOwnProfile
+                  ? "Create collections to organize your favorite memes"
+                  : "This user hasn't created any collections yet"
+              }
+            />
+          </Box>
+
+          {/* Panel 3 — About */}
+          <Box
+            onScroll={(e) =>
+              tab === 3 && onContentScroll?.(e.currentTarget.scrollTop)
+            }
+            sx={panelSx}
+          >
+            <ProfileAboutTab profile={profile} isOwnProfile={isOwnProfile} />
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
