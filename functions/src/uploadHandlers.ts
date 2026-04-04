@@ -531,9 +531,11 @@ export const finalizeUploadAsset = onCall<
       : null;
   const visibility = normalizeVisibility(request.data?.visibility);
   const source = normalizeSourceInput(request.data?.source);
-  const shouldAutoSubmitForReview = visibility === "public";
-  const finalStatus: UploadAssetDoc["status"] = shouldAutoSubmitForReview
-    ? "pending_review"
+  const shouldAutoApprovePublicUpload = visibility === "public";
+  // Future reuse: moderation queue flow.
+  // const shouldAutoSubmitForReview = visibility === "public";
+  const finalStatus: UploadAssetDoc["status"] = shouldAutoApprovePublicUpload
+    ? "published"
     : "uploaded";
 
   const tags = normalizeTags(request.data?.tags);
@@ -572,14 +574,18 @@ export const finalizeUploadAsset = onCall<
 
   const userRef = userRefByUid(db, uid);
   const assetRef = db.collection("assets").doc(assetId);
+  const memeRef = db.collection("memes").doc(assetId);
   const eventRef = assetRef.collection("events").doc();
-  const reviewEventRef = assetRef.collection("events").doc();
+  const approvalEventRef = assetRef.collection("events").doc();
+  // Future reuse: moderation queue flow.
+  // const reviewEventRef = assetRef.collection("events").doc();
 
   await db.runTransaction(async (tx) => {
     const [userSnap, assetSnap] = await Promise.all([
       tx.get(userRef),
       tx.get(assetRef),
     ]);
+    const memeSnap = shouldAutoApprovePublicUpload ? await tx.get(memeRef) : null;
 
     if (!userSnap.exists) {
       throw new HttpsError("failed-precondition", "User profile not found.");
@@ -636,26 +642,58 @@ export const finalizeUploadAsset = onCall<
       now,
     });
 
-    const reviewEvent = shouldAutoSubmitForReview
+    const approvalEvent = shouldAutoApprovePublicUpload
       ? createAssetEvent({
-          id: reviewEventRef.id,
+          id: approvalEventRef.id,
           assetId,
           actorId: uid,
-          type: "submitted_for_review",
+          type: "approved",
           metadata: {
             reasonCode: null,
             fromStatus: "uploaded",
-            toStatus: "pending_review",
+            toStatus: "published",
           },
           now,
         })
       : null;
 
+    // Future reuse: moderation queue flow.
+    // const reviewEvent = shouldAutoSubmitForReview
+    //   ? createAssetEvent({
+    //       id: reviewEventRef.id,
+    //       assetId,
+    //       actorId: uid,
+    //       type: "submitted_for_review",
+    //       metadata: {
+    //         reasonCode: null,
+    //         fromStatus: "uploaded",
+    //         toStatus: "pending_review",
+    //       },
+    //       now,
+    //     })
+    //   : null;
+
+    const moderationUpdate = shouldAutoApprovePublicUpload
+      ? {
+          ...asset.moderation,
+          finalDecision: "approved" as const,
+          reviewedAt: Timestamp.fromMillis(now),
+          reviewedBy: uid,
+          decidedAt: Timestamp.fromMillis(now),
+          decidedBy: uid,
+        }
+      : {
+          ...asset.moderation,
+          reviewedAt: null,
+        };
+
     tx.set(assetRef, {
       ...asset,
       createdAt: Timestamp.fromMillis(asset.createdAt),
       updatedAt: Timestamp.fromMillis(asset.updatedAt),
-      publishedAt: null,
+      publishedAt: shouldAutoApprovePublicUpload
+        ? Timestamp.fromMillis(now)
+        : null,
       removedAt: null,
       processing: {
         ...asset.processing,
@@ -665,10 +703,7 @@ export const finalizeUploadAsset = onCall<
         metadataExtractedAt: null,
         derivativesGeneratedAt: null,
       },
-      moderation: {
-        ...asset.moderation,
-        reviewedAt: null,
-      },
+      moderation: moderationUpdate,
       source: {
         sourceType: "upload",
         sourceUrl: source.sourceUrl,
@@ -683,12 +718,51 @@ export const finalizeUploadAsset = onCall<
       createdAt: Timestamp.fromMillis(uploadEvent.createdAt),
     });
 
-    if (reviewEvent) {
-      tx.set(reviewEventRef, {
-        ...reviewEvent,
-        createdAt: Timestamp.fromMillis(reviewEvent.createdAt),
+    if (approvalEvent) {
+      tx.set(approvalEventRef, {
+        ...approvalEvent,
+        createdAt: Timestamp.fromMillis(approvalEvent.createdAt),
       });
     }
+
+    if (shouldAutoApprovePublicUpload) {
+      const ownerData = userSnap.data() as Record<string, unknown>;
+      const existingMemeData =
+        memeSnap && memeSnap.exists
+          ? (memeSnap.data() as Record<string, unknown>)
+          : null;
+      const publishedAssetData: Record<string, unknown> = {
+        ...asset,
+        status: "published",
+        visibility: "public",
+        moderation: {
+          ...asset.moderation,
+          finalDecision: "approved",
+          reviewedAt: Timestamp.fromMillis(now),
+          reviewedBy: uid,
+          decidedAt: Timestamp.fromMillis(now),
+          decidedBy: uid,
+        },
+        publishedAt: Timestamp.fromMillis(now),
+      };
+      const memeDoc = mapApprovedAssetToMemeDoc({
+        assetId,
+        assetData: publishedAssetData,
+        ownerData,
+        existingMemeData,
+        approverId: uid,
+        now,
+      });
+      tx.set(memeRef, memeDoc, { merge: true });
+    }
+
+    // Future reuse: moderation queue flow.
+    // if (reviewEvent) {
+    //   tx.set(reviewEventRef, {
+    //     ...reviewEvent,
+    //     createdAt: Timestamp.fromMillis(reviewEvent.createdAt),
+    //   });
+    // }
 
     tx.set(
       userRef,
