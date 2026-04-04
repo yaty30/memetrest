@@ -12,19 +12,15 @@ import {
   createAssetEvent,
   createDefaultUserUploadProfile,
   createInitialAssetDoc,
-} from "../../src/services/uploadDefaults";
-import {
   hasExceededUploadLimits,
   isReviewableAssetStatus,
   isUploadSuspended,
-} from "../../src/services/uploadGuards";
-import {
   getQuarantineOriginalPath,
   getQuarantinePreviewPath,
   getQuarantineThumbnailPath,
-} from "../../src/utils/uploadStoragePaths";
-import { buildSearchKeywordsFromTags } from "../../src/utils/searchKeywords";
-import type { UploadAssetDoc, UserUploadProfile } from "../../src/types/upload";
+  buildSearchKeywordsFromTags,
+} from "@memetrest/shared";
+import type { UploadAssetDoc, UserUploadProfile } from "@memetrest/shared";
 
 initializeApp();
 
@@ -191,9 +187,7 @@ function normalizeTags(tags: unknown): string[] {
   return Array.from(new Set(normalized));
 }
 
-function normalizeVisibility(
-  value: unknown,
-): UploadAssetDoc["visibility"] {
+function normalizeVisibility(value: unknown): UploadAssetDoc["visibility"] {
   if (value == null) return "private";
   if (value === "private" || value === "public") return value;
   throw new HttpsError(
@@ -391,7 +385,9 @@ function mapApprovedAssetToMemeDoc(input: {
   const storagePath =
     asString(storage?.originalPath) || asString(existingMemeData?.storagePath);
   const uploadedBy =
-    asString(assetData.ownerId) || asString(existingMemeData?.uploadedBy) || null;
+    asString(assetData.ownerId) ||
+    asString(existingMemeData?.uploadedBy) ||
+    null;
 
   const displayName =
     asString(ownerData?.displayName).trim() ||
@@ -475,33 +471,42 @@ export const initializeUpload = onCall<
   InitializeUploadRequest,
   Promise<InitializeUploadResponse>
 >({ invoker: "public" }, async (request) => {
-  const uid = requireAuthUid(request.auth?.uid);
-  const now = Date.now();
+  try {
+    const uid = requireAuthUid(request.auth?.uid);
+    const now = Date.now();
 
-  requireNonEmptyString(request.data?.mimeType, "mimeType");
-  requirePositiveNumber(request.data?.fileSize, "fileSize");
+    requireNonEmptyString(request.data?.mimeType, "mimeType");
+    requirePositiveNumber(request.data?.fileSize, "fileSize");
 
-  const userRef = userRefByUid(db, uid);
-  const userSnap = await userRef.get();
-  if (!userSnap.exists) {
-    throw new HttpsError("failed-precondition", "User profile not found.");
+    const userRef = userRefByUid(db, uid);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new HttpsError("failed-precondition", "User profile not found.");
+    }
+
+    const profile = readUploadProfile(userSnap.data() as UserDocLike, now);
+    enforceUploadAllowed(profile, now);
+
+    const assetId = db.collection("assets").doc().id;
+
+    return {
+      assetId,
+      ownerId: uid,
+      uploadIssuedAt: now,
+      quarantinePaths: {
+        originalPath: getQuarantineOriginalPath(assetId),
+        previewPath: getQuarantinePreviewPath(assetId),
+        thumbnailPath: getQuarantineThumbnailPath(assetId),
+      },
+    };
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error("initializeUpload unhandled error:", err);
+    throw new HttpsError(
+      "internal",
+      `Upload initialization failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
-
-  const profile = readUploadProfile(userSnap.data() as UserDocLike, now);
-  enforceUploadAllowed(profile, now);
-
-  const assetId = db.collection("assets").doc().id;
-
-  return {
-    assetId,
-    ownerId: uid,
-    uploadIssuedAt: now,
-    quarantinePaths: {
-      originalPath: getQuarantineOriginalPath(assetId),
-      previewPath: getQuarantinePreviewPath(assetId),
-      thumbnailPath: getQuarantineThumbnailPath(assetId),
-    },
-  };
 });
 
 export const finalizeUploadAsset = onCall<
@@ -585,7 +590,9 @@ export const finalizeUploadAsset = onCall<
       tx.get(userRef),
       tx.get(assetRef),
     ]);
-    const memeSnap = shouldAutoApprovePublicUpload ? await tx.get(memeRef) : null;
+    const memeSnap = shouldAutoApprovePublicUpload
+      ? await tx.get(memeRef)
+      : null;
 
     if (!userSnap.exists) {
       throw new HttpsError("failed-precondition", "User profile not found.");
