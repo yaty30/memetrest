@@ -13,4 +13,3 @@ export {
   submitAssetForReview,
   setMemeLike,
 };
-

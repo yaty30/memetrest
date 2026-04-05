@@ -8,14 +8,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "outDir": "lib",
-    "rootDir": ".."
+    "rootDir": "."
   },
-  "include": [
-    "src/**/*.ts",
-    "../src/services/uploadDefaults.ts",
-    "../src/services/uploadGuards.ts",
-    "../src/utils/uploadStoragePaths.ts",
-    "../src/types/upload.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]
 }
