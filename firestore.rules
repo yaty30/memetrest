@@ -123,6 +123,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // collections are backend-authored docs (callable/Admin SDK writes).
+    match /collections/{collectionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    // collectionItems are backend-authored relation docs (callable/Admin SDK writes).
+    match /collectionItems/{itemId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
     // ── assets/{assetId} ───────────────────────────────────────────────
     // Upload-domain canonical asset docs are backend-authoritative in this phase.
     match /assets/{assetId} {
